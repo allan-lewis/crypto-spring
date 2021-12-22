@@ -5,10 +5,7 @@ import allanlewis.api.Product
 import allanlewis.api.RestApi
 import allanlewis.api.WebSocketApi
 import allanlewis.coinbase.*
-import allanlewis.positions.OrderDone
-import allanlewis.positions.OrderNotPending
-import allanlewis.positions.Position
-import allanlewis.positions.PositionManager
+import allanlewis.positions.*
 import allanlewis.products.ProductRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.config.BeanDefinition
@@ -46,7 +43,16 @@ open class ApplicationConfiguration(private val configurationData: Configuration
 
     @Bean
     open fun positionManager(): PositionManager {
-        return PositionManager(productRepository(), applicationContext).init()
+        return PositionManager(productRepository(),
+                configurationData.positionConfigs,
+                restApi(),
+                applicationContext,
+                positionStrategy()).init()
+    }
+
+    @Bean
+    open fun positionStrategy(): PositionStrategy {
+        return AlwaysTrueStrategy()
     }
 
     @Bean

@@ -13,6 +13,9 @@ interface RestApi {
     fun getOrder(id: String) : Order?
 
     @Throws(ApiException::class)
+    fun getOrders(): Collection<Order>
+
+    @Throws(ApiException::class)
     fun postOrder(order: Order) : Order
 }
 

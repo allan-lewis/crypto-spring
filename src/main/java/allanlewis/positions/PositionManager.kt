@@ -1,6 +1,8 @@
 package allanlewis.positions
 
+import allanlewis.PositionConfig
 import allanlewis.api.Product
+import allanlewis.api.RestApi
 import allanlewis.products.ProductRepository
 import org.reactivestreams.Publisher
 import org.slf4j.LoggerFactory
@@ -11,16 +13,44 @@ import reactor.core.publisher.MonoSink
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicReference
 
-class PositionManager(private val productRepository: ProductRepository, private val applicationContext: ApplicationContext) {
+class PositionManager(private val productRepository: ProductRepository,
+                      private val positionConfigs: Array<PositionConfig>,
+                      private val restApi: RestApi,
+                      private val applicationContext: ApplicationContext,
+                      private val positionStrategy: PositionStrategy) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
     private val positions = HashMap<String, Position>()
 
     fun init(): PositionManager {
+        productRepository.products().subscribe { p -> manage(p) }
         return this
     }
 
-    fun newPosition(productId: String): Publisher<String> {
+    private fun manage(product: Product) {
+        logger.info("Managing positions for {}", product.id)
+        Flux.interval(Duration.ofSeconds(10)).subscribe { i ->
+            run {
+                var max = 0
+                for (pc in positionConfigs) {
+                    if (pc.id == product.id) {
+                        max = pc.max
+                    }
+                }
+                val orderCount = restApi.getOrders().size
+                if (orderCount < max) {
+                    logger.info("For {} order count is {} (max {}), considering opening a position", product.id, orderCount, max)
+                    positionStrategy.openPosition()
+                            .log()
+                            .subscribe { b -> if (b) newPosition(product.id!!).log().subscribe() }
+                } else{
+                    logger.info("Nothing to do for {}, order count {} (max {})", product.id, orderCount, max)
+                }
+            }
+        }
+    }
+
+    fun newPosition(productId: String): Mono<String> {
         val product = AtomicReference<Product>()
         return Mono.create { sink: MonoSink<String> ->
             run {

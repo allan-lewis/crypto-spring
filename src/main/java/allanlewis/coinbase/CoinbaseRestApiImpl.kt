@@ -4,6 +4,7 @@ import allanlewis.api.ApiException
 import allanlewis.api.Order
 import allanlewis.api.Product
 import allanlewis.api.RestApi
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
 import java.net.URI
@@ -21,28 +22,35 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
     override fun getProduct(id: String): Product? {
         return apiCall(unauthenticatedRequest("/products/$id", "GET"),
             "getProduct",
-            CoinbaseProduct::class.java, arrayOf(404))
+                object: TypeReference<CoinbaseProduct>() {},
+                arrayOf(404))
     }
 
     override fun getOrder(id: String): Order? {
         return apiCall(authenticatedRequest("/orders/$id", "GET", "", CoinbaseUtilities.timestamp()),
             "getOrder",
-            CoinbaseOrder::class.java,
-            arrayOf(404))
+                object: TypeReference<CoinbaseOrder>() {},
+                arrayOf(404))
+    }
+
+    override fun getOrders(): Collection<Order> {
+        return apiCall(authenticatedRequest("/orders", "GET", "", CoinbaseUtilities.timestamp()),
+                "getOrders",
+                object: TypeReference<ArrayList<CoinbaseOrder>>() {})!!
     }
 
     override fun postOrder(order: Order): Order {
         val body = ObjectMapper().writeValueAsString(order)
         return apiCall(authenticatedRequest("/orders", "POST", body, CoinbaseUtilities.timestamp()),
             "postOrder",
-            CoinbaseOrder::class.java)!!
+            object: TypeReference<CoinbaseOrder>() {})!!
     }
 
-    private fun <T> apiCall(request: HttpRequest, logPrefix: String, valueType: Class<T>): T? {
+    private fun <T> apiCall(request: HttpRequest, logPrefix: String, valueType: TypeReference<T>): T? {
         return apiCall(request, logPrefix, valueType, emptyArray())
     }
 
-    private fun <T> apiCall(request: HttpRequest, logPrefix: String, valueType: Class<T>, nullStatuses: Array<Int>): T? {
+    private fun <T> apiCall(request: HttpRequest, logPrefix: String, valueType: TypeReference<T>, nullStatuses: Array<Int>): T? {
         return try {
             send(request, logPrefix, valueType, nullStatuses)
         } catch (ex: ApiException) {
@@ -54,7 +62,7 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
         }
     }
 
-    private fun <T> send(request: HttpRequest, logPrefix: String, valueType: Class<T>, nullStatuses: Array<Int>): T? {
+    private fun <T> send(request: HttpRequest, logPrefix: String, valueType: TypeReference<T>, nullStatuses: Array<Int>): T? {
         logger.info("{} {}", logPrefix, request.uri())
 
         val response = client.send(request, BodyHandlers.ofString())
