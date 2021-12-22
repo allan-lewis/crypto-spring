@@ -60,7 +60,7 @@ class Position(private val positionConfig: PositionConfig,
     private fun buy(): Mono<Order> {
         changeState(PositionState.BuyOrderPending)
 
-        val order = applicationContext.getBean(CoinbaseOrder::class.java)
+        val order = applicationContext.getBean(Order::class.java)
         order.productId = product.id
         order.side = "buy"
         order.type = "market"
@@ -98,7 +98,7 @@ class Position(private val positionConfig: PositionConfig,
 
         logger.info("Selling {} {} {} {} {}", boughtSize, fee, funds, size, price)
 
-        val order = applicationContext.getBean(CoinbaseOrder::class.java)
+        val order = applicationContext.getBean(Order::class.java)
         order.productId = product.id
         order.side = "sell"
         order.size = size.toPlainString()

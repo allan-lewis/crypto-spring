@@ -132,3 +132,28 @@ class CoinbaseOrder: Order {
     @JsonProperty("done_reason")
     override var doneReason: String? = null
 }
+
+class SubscriptionMessage {
+
+    @JsonProperty("signature")
+    lateinit var signature: String
+
+    @JsonProperty("key")
+    lateinit var key: String
+
+    @JsonProperty("passphrase")
+    lateinit var passphrase: String
+
+    @JsonProperty("timestamp")
+    lateinit var timestamp: String
+
+    @JsonProperty("product_ids")
+    lateinit var productIds: Array<String>
+
+    @JsonProperty("type")
+    val type = "subscribe"
+
+    @JsonProperty("channels")
+    val channels = arrayOf("heartbeat", "user", "ticker")
+
+}

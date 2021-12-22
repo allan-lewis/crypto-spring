@@ -1,7 +1,10 @@
 package allanlewis
 
+import allanlewis.api.Order
 import allanlewis.api.Product
 import allanlewis.api.RestApi
+import allanlewis.api.WebSocketApi
+import allanlewis.coinbase.*
 import allanlewis.positions.OrderDone
 import allanlewis.positions.OrderNotPending
 import allanlewis.positions.Position
@@ -17,7 +20,9 @@ import org.springframework.boot.runApplication
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Scope
+import org.springframework.web.reactive.socket.WebSocketHandler
 import java.lang.IllegalArgumentException
 
 
@@ -29,14 +34,14 @@ fun main(args: Array<String>) {
 }
 
 @Configuration
-@EnableConfigurationProperties(ConfigurationData::class)
-open class ApplicationConfiguration(@Autowired private val restApi: RestApi,
-                                    private val configurationData: ConfigurationData,
+@EnableConfigurationProperties(ConfigurationData::class, CoinbaseConfigurationData::class)
+open class ApplicationConfiguration(private val configurationData: ConfigurationData,
+                                    private val coinbaseConfigurationData: CoinbaseConfigurationData,
                                     private val applicationContext: ApplicationContext) {
 
     @Bean
     open fun productRepository(): ProductRepository {
-        return ProductRepository(configurationData.positionConfigs, restApi).init()
+        return ProductRepository(configurationData.positionConfigs, restApi()).init()
     }
 
     @Bean
@@ -58,12 +63,36 @@ open class ApplicationConfiguration(@Autowired private val restApi: RestApi,
 
     @Bean
     open fun orderDone(): OrderDone? {
-        return OrderDone(restApi)
+        return OrderDone(restApi())
     }
 
     @Bean
     open fun orderNotPending(): OrderNotPending? {
-        return OrderNotPending(restApi)
+        return OrderNotPending(restApi())
+    }
+
+    @Bean
+    open fun restApi(): RestApi {
+        return CoinbaseRestApiImpl(coinbaseConfigurationData)
+    }
+
+    @Bean
+    open fun webSocketApi(): WebSocketApi {
+        return CoinbaseWebSocketApiImpl(coinbaseConfigurationData, webSocketHandler())
+//        return CoinbaseWebSocketApiImpl(coinbaseConfigurationData, webSocketHandler()).init()
+    }
+
+    @Bean
+    open fun webSocketHandler(): WebSocketHandler {
+        return CoinbaseWebSocketHandler(coinbaseConfigurationData, productRepository())
+    }
+
+    @Bean
+    @Scope(BeanDefinition.SCOPE_PROTOTYPE)
+    open fun order(): Order {
+        val order = CoinbaseOrder()
+        order.profileId = coinbaseConfigurationData.profileId
+        return order
     }
 
 }

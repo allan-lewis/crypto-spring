@@ -12,12 +12,13 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.5.2</version>
+        <version>2.6.1</version>
         <relativePath/>
     </parent>
 
     <properties>
-        <kotlin.version>1.5.10</kotlin.version>
+        <version.kotlin>1.6.0</version.kotlin>
+        <version.reactor>1.0.1.RELEASE</version.reactor>
     </properties>
 
     <dependencies>
@@ -30,27 +31,29 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
+
+        <!-- #### PROJECT REACTOR #### -->
         <dependency>
             <groupId>org.projectreactor</groupId>
             <artifactId>reactor-spring</artifactId>
-            <version>1.0.1.RELEASE</version>
+            <version>${version.reactor}</version>
         </dependency>
 
         <!-- #### KOTLIN #### -->
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib-jdk8</artifactId>
-            <version>${kotlin.version}</version>
+            <version>${version.kotlin}</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-reflect</artifactId>
-            <version>${kotlin.version}</version>
+            <version>${version.kotlin}</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-test</artifactId>
-            <version>${kotlin.version}</version>
+            <version>${version.kotlin}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -60,14 +63,11 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>allanlewis.Application</mainClass>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
-                <version>${kotlin.version}</version>
+                <version>${version.kotlin}</version>
                 <executions>
                     <execution>
                         <id>compile</id>

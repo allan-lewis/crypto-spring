@@ -1,0 +1,30 @@
+crypto:
+  config:
+    positionConfigs:
+      - id: BTC-USD
+        max: 1
+        funds: 10
+        fee: .005
+        sell: .99
+      - id: ETH-USD
+        max: 1
+        funds: 10
+        fee: .005
+        sell: .99
+
+### PRODUCTION
+#coinbase:
+#  profileId: 8bc09624-b609-4adc-99f8-acffd7513e90
+#  restUrl: https://api.exchange.coinbase.com
+#  webSocketUrl: wss://ws-feed.exchange.coinbase.com
+#  key: 2fc0d244227bb5a265cca0bac21ba4ca
+#  passphrase: yj6vo9hek1
+#  secret: cqcGU8TYtaA2t46N2UJoWuMFRvTiJpKom20/pxciWeQmgD3Bzm6nOYNAp/EOpRJYAdbi/C62mbJE17C78RFZng==
+### SANDBOX
+coinbase:
+  profileId: e1e890bf-e4d9-4d78-bdce-15fb8383ead9
+  restUrl: https://api-public.sandbox.exchange.coinbase.com
+  webSocketUrl: wss://ws-feed-public.sandbox.exchange.coinbase.com
+  key: 86512f3d96b99f8e86c0af36f8989738
+  passphrase: 53418fey64g
+  secret: 8e5lWBoa++Bd3E9IsZ25Cy56WgCoBI5G9Q7/1U7ha0nMAfl/APyuSXLw6sOa+GL97QAx7oDKjjlwhAsgRjd+7g==

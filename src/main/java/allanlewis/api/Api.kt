@@ -2,6 +2,8 @@ package allanlewis.api
 
 import kotlin.jvm.Throws
 
+interface WebSocketApi
+
 interface RestApi {
 
     @Throws(ApiException::class)

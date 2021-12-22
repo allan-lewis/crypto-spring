@@ -3,14 +3,17 @@ package allanlewis.positions
 import allanlewis.api.Product
 import allanlewis.products.ProductRepository
 import org.reactivestreams.Publisher
+import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.MonoSink
+import java.time.Duration
 import java.util.concurrent.atomic.AtomicReference
-
 
 class PositionManager(private val productRepository: ProductRepository, private val applicationContext: ApplicationContext) {
 
+    private val logger = LoggerFactory.getLogger(javaClass)
     private val positions = HashMap<String, Position>()
 
     fun init(): PositionManager {

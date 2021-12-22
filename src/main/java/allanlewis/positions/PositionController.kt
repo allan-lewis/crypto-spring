@@ -14,9 +14,9 @@ class PositionController(@Autowired private val positionManager: PositionManager
         return positionManager.newPosition(productId)
     }
 
-    @GetMapping(path = ["/{transactionId}"])
-    operator fun get(@PathVariable transactionId: String?): Publisher<Position> {
-        return positionManager.getPosition(transactionId)
+    @GetMapping(path = ["/{positionId}"])
+    operator fun get(@PathVariable positionId: String?): Publisher<Position> {
+        return positionManager.getPosition(positionId)
     }
 
 }
