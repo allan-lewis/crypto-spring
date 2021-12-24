@@ -4,14 +4,22 @@ import reactor.core.publisher.Mono
 
 interface PositionStrategy {
 
-    fun openPosition(): Mono<Boolean>
+    fun openPosition(productId: String): Mono<Boolean>
 
 }
 
 class AlwaysTrueStrategy : PositionStrategy {
 
-    override fun openPosition(): Mono<Boolean> {
+    override fun openPosition(productId: String): Mono<Boolean> {
         return Mono.just(true)
+    }
+
+}
+
+class DayRangeStrategy : PositionStrategy {
+
+    override fun openPosition(productId: String): Mono<Boolean> {
+        return Mono.just(false)
     }
 
 }

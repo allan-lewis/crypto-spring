@@ -4,6 +4,7 @@ import kotlin.jvm.Throws
 
 interface WebSocketApi
 
+//TODO Make this reactive
 interface RestApi {
 
     @Throws(ApiException::class)
@@ -71,4 +72,16 @@ interface Order {
     var specifiedFunds: String?
     var doneAt: String?
     var doneReason: String?
+}
+
+interface Price {
+
+    var price: String
+    var productId: String
+    var time: String
+    var twentyFourHourOpen: String
+    var twentyFourHourVolume: String
+    var twentyFourHourHigh: String
+    var twentyFourHourLow: String
+
 }

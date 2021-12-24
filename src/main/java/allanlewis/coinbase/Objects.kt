@@ -3,7 +3,9 @@
 package allanlewis.coinbase
 
 import allanlewis.api.Order
+import allanlewis.api.Price
 import allanlewis.api.Product
+import allanlewis.utility.ToStringBuilder
 import com.fasterxml.jackson.annotation.JsonProperty
 
 class CoinbaseProduct: Product {
@@ -155,5 +157,83 @@ class SubscriptionMessage {
 
     @JsonProperty("channels")
     val channels = arrayOf("heartbeat", "user", "ticker")
+
+}
+
+class CoinbasePrice(override var price: String,
+                    override var productId: String,
+                    override var time: String,
+                    override var twentyFourHourOpen: String,
+                    override var twentyFourHourVolume: String,
+                    override var twentyFourHourHigh: String,
+                    override var twentyFourHourLow: String) : Price
+
+
+class CoinbaseWebSocketMessage {
+
+    @JsonProperty("type")
+    lateinit var type: String
+
+    @JsonProperty("channels")
+    lateinit var channels: Array<Channel>
+
+    @JsonProperty("sequence")
+    var sequence: Long = 0
+
+    @JsonProperty("product_id")
+    lateinit var productId: String
+
+    @JsonProperty("price")
+    lateinit var price: String
+
+    @JsonProperty("open_24h")
+    lateinit var twentyFourHourOpen: String
+
+    @JsonProperty("volume_24h")
+    lateinit var twentyFourHourVolume: String
+
+    @JsonProperty("high_24h")
+    lateinit var twentyFourHourHigh: String
+
+    @JsonProperty("low_24h")
+    lateinit var twentyFourHourLow: String
+
+    @JsonProperty("volume_30d")
+    lateinit var thirtyDayVolume: String
+
+    @JsonProperty("best_bid")
+    lateinit var bestBid: String
+
+    @JsonProperty("best_ask")
+    lateinit var bestAsk: String
+
+    @JsonProperty("side")
+    lateinit var side: String
+
+    @JsonProperty("time")
+    lateinit var time: String
+
+    @JsonProperty("trade_id")
+    var tradeId: Long = 0
+
+    @JsonProperty("last_size")
+    lateinit var lastSize: String
+
+    @JsonProperty("last_trade_id")
+    var lastTradeId: Long = 0
+
+    override fun toString(): String {
+        return ToStringBuilder.toString(this)
+    }
+
+}
+
+class Channel {
+
+    @JsonProperty("name")
+    lateinit var type: String
+
+    @JsonProperty("product_ids")
+    lateinit var productIds: Array<String>
 
 }

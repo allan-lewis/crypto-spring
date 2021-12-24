@@ -7,7 +7,6 @@ import allanlewis.api.WebSocketApi
 import allanlewis.coinbase.*
 import allanlewis.positions.*
 import allanlewis.products.ProductRepository
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.config.BeanDefinition
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -17,7 +16,6 @@ import org.springframework.boot.runApplication
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Scope
 import org.springframework.web.reactive.socket.WebSocketHandler
 import java.lang.IllegalArgumentException
@@ -47,11 +45,16 @@ open class ApplicationConfiguration(private val configurationData: Configuration
                 configurationData.positionConfigs,
                 restApi(),
                 applicationContext,
-                positionStrategy()).init()
+                dayRangeStrategy()).init()
     }
 
     @Bean
-    open fun positionStrategy(): PositionStrategy {
+    open fun dayRangeStrategy(): PositionStrategy {
+        return DayRangeStrategy()
+    }
+
+    @Bean
+    open fun alwaysTrueStrategy(): PositionStrategy {
         return AlwaysTrueStrategy()
     }
 
@@ -84,8 +87,7 @@ open class ApplicationConfiguration(private val configurationData: Configuration
 
     @Bean
     open fun webSocketApi(): WebSocketApi {
-        return CoinbaseWebSocketApiImpl(coinbaseConfigurationData, webSocketHandler())
-//        return CoinbaseWebSocketApiImpl(coinbaseConfigurationData, webSocketHandler()).init()
+        return CoinbaseWebSocketApiImpl(coinbaseConfigurationData, webSocketHandler()).init()
     }
 
     @Bean
