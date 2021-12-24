@@ -3,7 +3,7 @@
 package allanlewis.coinbase
 
 import allanlewis.api.Order
-import allanlewis.api.Price
+import allanlewis.api.PriceTick
 import allanlewis.api.Product
 import allanlewis.utility.ToStringBuilder
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -160,13 +160,19 @@ class SubscriptionMessage {
 
 }
 
-class CoinbasePrice(override var price: String,
-                    override var productId: String,
-                    override var time: String,
-                    override var twentyFourHourOpen: String,
-                    override var twentyFourHourVolume: String,
-                    override var twentyFourHourHigh: String,
-                    override var twentyFourHourLow: String) : Price
+class CoinbasePriceTick(override var price: String,
+                        override var productId: String,
+                        override var time: String,
+                        override var twentyFourHourOpen: String,
+                        override var twentyFourHourVolume: String,
+                        override var twentyFourHourHigh: String,
+                        override var twentyFourHourLow: String) : PriceTick {
+
+    override fun toString(): String {
+        return ToStringBuilder.toString(this)
+    }
+
+}
 
 
 class CoinbaseWebSocketMessage {

@@ -1,6 +1,6 @@
 package allanlewis.coinbase
 
-import allanlewis.api.Price
+import allanlewis.api.PriceTick
 import allanlewis.api.WebSocketApi
 import allanlewis.coinbase.CoinbaseUtilities.sign
 import allanlewis.coinbase.CoinbaseUtilities.timestamp
@@ -17,12 +17,14 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.net.URI
 import java.time.Duration
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
 import javax.websocket.ContainerProvider
+import kotlin.collections.ArrayList
 
 class CoinbaseWebSocketApiImpl(private val config: CoinbaseConfigurationData,
-                               private val webSocketHandler: WebSocketHandler): WebSocketApi {
+                               private val webSocketHandler: CoinbaseWebSocketHandler): WebSocketApi {
 
     private val size = 2048000
 
@@ -39,6 +41,10 @@ class CoinbaseWebSocketApiImpl(private val config: CoinbaseConfigurationData,
         return this
     }
 
+    override fun ticks(): Flux<PriceTick> {
+        return webSocketHandler.ticks()
+    }
+
 }
 
 class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
@@ -47,7 +53,12 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
     private val logger = LoggerFactory.getLogger(javaClass)
     private val mapper = ObjectMapper()
 
-    private val ticks = ConcurrentHashMap<String, Price>()
+    private val ticks = ConcurrentHashMap<String, PriceTick>()
+    private val flux =  Flux.interval(Duration.ofMillis(500))
+        .onBackpressureDrop()
+        .map { ticks.values }
+        .flatMapIterable { ticks -> ticks }
+        .share()
 
     override fun handle(session: WebSocketSession): Mono<Void> {
         val timestamp = timestamp()
@@ -82,7 +93,7 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
     }
 
     private fun updatePrice(message: CoinbaseWebSocketMessage) {
-        ticks[message.productId] = CoinbasePrice(message.price,
+        ticks[message.productId] = CoinbasePriceTick(message.price,
                 message.productId,
                 message.time,
                 message.twentyFourHourOpen,
@@ -91,11 +102,8 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
                 message.twentyFourHourLow)
     }
 
-    fun ticks(productId: String): Flux<Price> {
-        return Flux.interval(Duration.ofMillis(500))
-                .onBackpressureDrop()
-                .map { ticks[productId]!!}
-                .share()
+    fun ticks(): Flux<PriceTick> {
+        return flux
     }
 
 }

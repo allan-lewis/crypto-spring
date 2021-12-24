@@ -1,8 +1,14 @@
 package allanlewis.api
 
+import reactor.core.publisher.Flux
 import kotlin.jvm.Throws
 
-interface WebSocketApi
+interface WebSocketApi {
+
+    @Throws(ApiException::class)
+    fun ticks(): Flux<PriceTick>
+
+}
 
 //TODO Make this reactive
 interface RestApi {
@@ -74,7 +80,7 @@ interface Order {
     var doneReason: String?
 }
 
-interface Price {
+interface PriceTick {
 
     var price: String
     var productId: String
