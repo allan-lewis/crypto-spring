@@ -79,6 +79,8 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
     }
 
     private fun unauthenticatedRequest(path: String, method: String): HttpRequest {
+        logger.info("{} {}", path, method)
+
         return HttpRequest.newBuilder()
             .uri(URI.create(config.restUrl + path))
             .method(method, HttpRequest.BodyPublishers.noBody())
@@ -87,6 +89,8 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
     }
 
     private fun authenticatedRequest(path: String, method: String, body: String, timestamp: String): HttpRequest {
+        logger.info("{} {} {}", path, method, body)
+
         return HttpRequest.newBuilder()
             .uri(URI.create(config.restUrl + path))
             .method(method, HttpRequest.BodyPublishers.ofString(body))

@@ -41,10 +41,10 @@ class PositionManager(private val productRepository: ProductRepository,
                 val orderCount = restApi.getOrders().filter { o -> o.productId == product.id }.size
                 if (orderCount < max) {
                     logger.info("For {} order count is {} (max {}), considering opening a position", product.id, orderCount, max)
-                        applicationContext.getBean(PositionStrategy::class.java)
+                    applicationContext.getBean(PositionStrategy::class.java)
                             .openPosition(product.id!!)
                             .log(logger.name, Level.FINE)
-                            .subscribe { b -> if (b) newPosition(product.id!!).log().subscribe() }
+                            .subscribe { b -> if (b) newPosition(product.id!!).log(logger.name, Level.FINE).subscribe() }
                 } else{
                     logger.info("Nothing to do for {}, order count {} (max {})", product.id, orderCount, max)
                 }
@@ -53,6 +53,8 @@ class PositionManager(private val productRepository: ProductRepository,
     }
 
     fun newPosition(productId: String): Mono<String> {
+        logger.info("Opening a new position for {}", productId)
+
         val product = AtomicReference<Product>()
         return Mono.create { sink: MonoSink<String> ->
             run {
@@ -61,6 +63,9 @@ class PositionManager(private val productRepository: ProductRepository,
                     {
                         if (product.get() != null) {
                             val position = applicationContext.getBean(Position::class.java, product.get())
+
+                            logger.info("Created position {} {} for {}", position.hashCode(), position.id, product.get().id)
+
                             positions[position.id] = position.init()
                             sink.success(position.id)
                         } else {

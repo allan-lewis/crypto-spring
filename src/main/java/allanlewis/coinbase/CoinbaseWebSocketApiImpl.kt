@@ -79,7 +79,7 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
         return session.send(Mono.just(payload)
             .map(session::textMessage))
             .and(session.receive().map { webSocketMessage -> handleResponse(webSocketMessage) }.log(logger.name, Level.FINE))
-            .and(session.closeStatus().map(CloseStatus::getCode).log())
+            .and(session.closeStatus().map(CloseStatus::getCode).log(logger.name, Level.FINE))
     }
 
     private fun handleResponse(message: WebSocketMessage): CoinbaseWebSocketMessage {

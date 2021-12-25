@@ -50,7 +50,8 @@ open class ApplicationConfiguration(private val configurationData: Configuration
 
     @Bean()
     open fun positionStrategy(): PositionStrategy {
-        return DayRangeStrategy(webSocketApi()).init()
+        return AlwaysTrueStrategy()
+//        return DayRangeStrategy(webSocketApi()).init()
     }
 
     @Bean
@@ -66,11 +67,13 @@ open class ApplicationConfiguration(private val configurationData: Configuration
     }
 
     @Bean
+    @Scope(BeanDefinition.SCOPE_PROTOTYPE)
     open fun orderDone(): OrderDone? {
         return OrderDone(restApi())
     }
 
     @Bean
+    @Scope(BeanDefinition.SCOPE_PROTOTYPE)
     open fun orderNotPending(): OrderNotPending? {
         return OrderNotPending(restApi())
     }

@@ -14,6 +14,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
+import java.util.logging.Level
 
 class Position(private val positionConfig: PositionConfig,
                private val product: Product,
@@ -42,7 +43,7 @@ class Position(private val positionConfig: PositionConfig,
     }
 
     private fun buyPosition() {
-        buy().log().subscribe({ order ->
+        buy().log(logger.name, Level.FINE).subscribe({ order ->
             changeState(order,
                 null,
                 PositionState.BuyOrderFilled,
@@ -65,12 +66,13 @@ class Position(private val positionConfig: PositionConfig,
         order.side = "buy"
         order.type = "market"
         order.funds = positionConfig.funds
+        order.clientId = "B" + this.id
 
         return buy.init(order)!!.mono
     }
 
     private fun sellPosition() {
-        sell(buy.order().filledSize).log().subscribe({ order ->
+        sell(buy.order().filledSize).log(logger.name, Level.FINE).subscribe({ order ->
             changeState(order,
                 PositionState.SellOrderOpen,
                 PositionState.SellOrderFilled,
@@ -103,6 +105,7 @@ class Position(private val positionConfig: PositionConfig,
         order.side = "sell"
         order.size = size.toPlainString()
         order.price = price.toPlainString()
+        order.clientId = "S" + this.id
 
         return sell.init(order)!!.mono
     }

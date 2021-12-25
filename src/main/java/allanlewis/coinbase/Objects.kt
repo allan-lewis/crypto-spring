@@ -77,6 +77,9 @@ class CoinbaseOrder: Order {
     @JsonProperty("id")
     override var id: String? = null
 
+    @JsonProperty("client_oid")
+    override var clientId: String? = null
+
     @JsonProperty("price")
     override var price: String? = null
 
@@ -174,7 +177,6 @@ class CoinbasePriceTick(override var price: String,
 
 }
 
-
 class CoinbaseWebSocketMessage {
 
     @JsonProperty("type")
@@ -227,6 +229,48 @@ class CoinbaseWebSocketMessage {
 
     @JsonProperty("last_trade_id")
     var lastTradeId: Long = 0
+
+    @JsonProperty("order_id")
+    lateinit var orderId: String
+
+    @JsonProperty("order_type")
+    lateinit var orderType: String
+
+    @JsonProperty("funds")
+    lateinit var funds: String
+
+    @JsonProperty("client_oid")
+    lateinit var clientId: String
+
+    @JsonProperty("profile_id")
+    lateinit var profileId: String
+
+    @JsonProperty("user_id")
+    lateinit var userId: String
+
+    @JsonProperty("reason")
+    lateinit var reason: String
+
+    @JsonProperty("maker_order_id")
+    lateinit var makerOrderId: String
+
+    @JsonProperty("remaining_size")
+    lateinit var remainingSize: String
+
+    @JsonProperty("taker_order_id")
+    lateinit var takerOrderId: String
+
+    @JsonProperty("taker_profile_id")
+    lateinit var takerProfileId: String
+
+    @JsonProperty("taker_user_id")
+    lateinit var takerUserId: String
+
+    @JsonProperty("taker_fee_rate")
+    lateinit var takerFeeRate: String
+
+    @JsonProperty("size")
+    lateinit var size: String
 
     override fun toString(): String {
         return ToStringBuilder.toString(this)

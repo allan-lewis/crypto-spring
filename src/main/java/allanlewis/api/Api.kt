@@ -10,7 +10,6 @@ interface WebSocketApi {
 
 }
 
-//TODO Make this reactive
 interface RestApi {
 
     @Throws(ApiException::class)
@@ -59,6 +58,7 @@ interface Product {
 interface Order {
 
     var id: String?
+    var clientId: String?
     var price: String?
     var size: String?
     var productId: String?
