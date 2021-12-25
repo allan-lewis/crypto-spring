@@ -21,6 +21,7 @@ class PositionManager(private val productRepository: ProductRepository,
 
     private val logger = LoggerFactory.getLogger(javaClass)
     private val positions = HashMap<String, Position>()
+    private val intervalSeconds = 15L
 
     fun init(): PositionManager {
         productRepository.products().subscribe { p -> manage(p) }
@@ -29,7 +30,7 @@ class PositionManager(private val productRepository: ProductRepository,
 
     private fun manage(product: Product) {
         logger.info("Managing positions for {}", product.id)
-        Flux.interval(Duration.ofSeconds(10)).subscribe { i ->
+        Flux.interval(Duration.ofSeconds(intervalSeconds)).subscribe {
             run {
                 var max = 0
                 for (pc in positionConfigs) {
@@ -37,7 +38,7 @@ class PositionManager(private val productRepository: ProductRepository,
                         max = pc.max
                     }
                 }
-                val orderCount = restApi.getOrders().size
+                val orderCount = restApi.getOrders().filter { o -> o.productId == product.id }.size
                 if (orderCount < max) {
                     logger.info("For {} order count is {} (max {}), considering opening a position", product.id, orderCount, max)
                         applicationContext.getBean(PositionStrategy::class.java)

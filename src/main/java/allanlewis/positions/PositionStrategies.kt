@@ -4,6 +4,8 @@ import allanlewis.api.PriceTick
 import allanlewis.api.WebSocketApi
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.util.concurrent.ConcurrentHashMap
 
 interface PositionStrategy {
@@ -34,7 +36,19 @@ class DayRangeStrategy(private val webSocketApi: WebSocketApi) : PositionStrateg
     private fun decide(tick: PriceTick) {
         logger.debug("{}", tick)
 
-        decisions[tick.productId] = false
+        val high = BigDecimal(tick.twentyFourHourHigh)
+        val low = BigDecimal(tick.twentyFourHourLow)
+
+        val increment = high.subtract(low).divide(BigDecimal(4), RoundingMode.HALF_UP)
+        val start = low.add(increment)
+        val end = high.subtract(increment.multiply(BigDecimal(2)))
+
+        val price = BigDecimal(tick.price)
+        val decision = price < end && price > start
+
+        logger.debug("{} {} {}...{}...{}...{} {}", tick.productId, tick.price, low.toPlainString(), start, end, high.toPlainString(), decision)
+
+        decisions[tick.productId] = decision
     }
 
     override fun openPosition(productId: String): Mono<Boolean> {
@@ -42,7 +56,7 @@ class DayRangeStrategy(private val webSocketApi: WebSocketApi) : PositionStrateg
 
         logger.info("Open position for {}? {}", productId, open)
 
-        return Mono.just(false)
+        return Mono.just(open)
     }
 
 }
