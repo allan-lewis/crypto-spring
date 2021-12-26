@@ -19,10 +19,14 @@
 
     <properties>
         <version.kotlin>1.6.0</version.kotlin>
+        <version.logback>1.2.10</version.logback>
         <version.reactor>1.0.1.RELEASE</version.reactor>
+        <version.slf4j>1.7.32</version.slf4j>
+        <version.sysout-over-slf4j>1.0.2</version.sysout-over-slf4j>
     </properties>
 
     <dependencies>
+
         <!-- #### SPRING BOOT #### -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -38,6 +42,38 @@
             <groupId>org.projectreactor</groupId>
             <artifactId>reactor-spring</artifactId>
             <version>${version.reactor}</version>
+        </dependency>
+
+        <!-- ### LOGGING ### -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${version.slf4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+            <version>${version.slf4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>log4j-over-slf4j</artifactId>
+            <version>${version.slf4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
+            <version>${version.slf4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${version.logback}</version>
+        </dependency>
+        <dependency>
+            <groupId>uk.org.lidalia</groupId>
+            <artifactId>sysout-over-slf4j</artifactId>
+            <version>${version.sysout-over-slf4j}</version>
         </dependency>
 
         <!-- #### KOTLIN #### -->

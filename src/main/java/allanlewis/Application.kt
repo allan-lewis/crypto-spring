@@ -7,8 +7,11 @@ import allanlewis.api.WebSocketApi
 import allanlewis.coinbase.*
 import allanlewis.positions.*
 import allanlewis.products.ProductRepository
-import org.springframework.beans.factory.FactoryBean
-import org.springframework.beans.factory.annotation.Autowired
+import org.apache.juli.logging.Log
+import org.apache.juli.logging.LogFactory
+import org.apache.log4j.Logger
+import org.slf4j.bridge.SLF4JBridgeHandler
+import org.springframework.beans.factory.InitializingBean
 import org.springframework.beans.factory.config.BeanDefinition
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -19,11 +22,30 @@ import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Scope
-import java.lang.IllegalArgumentException
+import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J
 
 
 @SpringBootApplication
-open class Application
+open class Application: InitializingBean {
+
+    override fun afterPropertiesSet() {
+        SysOutOverSLF4J.sendSystemOutAndErrToSLF4J()
+        println("logged via system.out")
+        System.err.println("logged via system.err")
+
+        SLF4JBridgeHandler.removeHandlersForRootLogger()
+        SLF4JBridgeHandler.install()
+        val julLogger = java.util.logging.Logger.getLogger(Application::class.java.name)
+        julLogger.info("logged via jul")
+
+        val log4JLogger: Logger = Logger.getLogger(Application::class.java)
+        log4JLogger.info("logged via log4j")
+
+        val jclLogger: Log = LogFactory.getLog(Application::class.java)
+        jclLogger.info("logged via jcl")
+    }
+
+}
 
 fun main(args: Array<String>) {
     runApplication<Application>(*args)
@@ -50,8 +72,7 @@ open class ApplicationConfiguration(private val configurationData: Configuration
 
     @Bean()
     open fun positionStrategy(): PositionStrategy {
-        return AlwaysTrueStrategy()
-//        return DayRangeStrategy(webSocketApi()).init()
+        return DayRangeStrategy(webSocketApi()).init()
     }
 
     @Bean

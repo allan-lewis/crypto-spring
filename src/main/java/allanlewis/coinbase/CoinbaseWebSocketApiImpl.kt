@@ -17,9 +17,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.net.URI
 import java.time.Duration
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.logging.Level
 import javax.websocket.ContainerProvider
 import kotlin.collections.ArrayList
 
@@ -50,7 +48,6 @@ class CoinbaseWebSocketApiImpl(private val config: CoinbaseConfigurationData,
 class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
                                private val productRepository: ProductRepository) : WebSocketHandler {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
     private val mapper = ObjectMapper()
 
     private val ticks = ConcurrentHashMap<String, PriceTick>()
@@ -78,8 +75,8 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
 
         return session.send(Mono.just(payload)
             .map(session::textMessage))
-            .and(session.receive().map { webSocketMessage -> handleResponse(webSocketMessage) }.log(logger.name, Level.FINE))
-            .and(session.closeStatus().map(CloseStatus::getCode).log(logger.name, Level.FINE))
+            .and(session.receive().map { webSocketMessage -> handleResponse(webSocketMessage) }.log())
+            .and(session.closeStatus().map(CloseStatus::getCode).log())
     }
 
     private fun handleResponse(message: WebSocketMessage): CoinbaseWebSocketMessage {

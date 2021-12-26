@@ -12,7 +12,6 @@ import reactor.core.publisher.Mono
 import reactor.core.publisher.MonoSink
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicReference
-import java.util.logging.Level
 
 class PositionManager(private val productRepository: ProductRepository,
                       private val positionConfigs: Array<PositionConfig>,
@@ -43,8 +42,8 @@ class PositionManager(private val productRepository: ProductRepository,
                     logger.info("For {} order count is {} (max {}), considering opening a position", product.id, orderCount, max)
                     applicationContext.getBean(PositionStrategy::class.java)
                             .openPosition(product.id!!)
-                            .log(logger.name, Level.FINE)
-                            .subscribe { b -> if (b) newPosition(product.id!!).log(logger.name, Level.FINE).subscribe() }
+                            .log()
+                            .subscribe { b -> if (b) newPosition(product.id!!).log().subscribe() }
                 } else{
                     logger.info("Nothing to do for {}, order count {} (max {})", product.id, orderCount, max)
                 }

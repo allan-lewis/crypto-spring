@@ -3,7 +3,6 @@ package allanlewis.positions
 import allanlewis.PositionConfig
 import allanlewis.api.Order
 import allanlewis.api.Product
-import allanlewis.coinbase.CoinbaseOrder
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
@@ -14,7 +13,6 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
-import java.util.logging.Level
 
 class Position(private val positionConfig: PositionConfig,
                private val product: Product,
@@ -43,7 +41,7 @@ class Position(private val positionConfig: PositionConfig,
     }
 
     private fun buyPosition() {
-        buy().log(logger.name, Level.FINE).subscribe({ order ->
+        buy().log().subscribe({ order ->
             changeState(order,
                 null,
                 PositionState.BuyOrderFilled,
@@ -72,7 +70,7 @@ class Position(private val positionConfig: PositionConfig,
     }
 
     private fun sellPosition() {
-        sell(buy.order().filledSize).log(logger.name, Level.FINE).subscribe({ order ->
+        sell(buy.order().filledSize).log().subscribe({ order ->
             changeState(order,
                 PositionState.SellOrderOpen,
                 PositionState.SellOrderFilled,
