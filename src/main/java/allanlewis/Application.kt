@@ -50,7 +50,6 @@ open class ApplicationConfiguration(private val configurationData: Configuration
 
     @Bean()
     open fun positionStrategy(): PositionStrategy {
-//        return AlwaysTrueStrategy()
         return DayRangeStrategy(webSocketApi()).init()
     }
 
