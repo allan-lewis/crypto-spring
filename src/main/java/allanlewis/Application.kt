@@ -48,7 +48,7 @@ open class ApplicationConfiguration(private val configurationData: Configuration
                 applicationContext).init()
     }
 
-    @Bean()
+    @Bean
     open fun positionStrategy(): PositionStrategy {
         return DayRangeStrategy(webSocketApi()).init()
     }
