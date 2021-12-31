@@ -7,6 +7,7 @@ import allanlewis.api.RestApi
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
+import reactor.core.publisher.Mono
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -19,18 +20,23 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
     private val timeout = 10L
     private val client: HttpClient = HttpClient.newBuilder().connectTimeout(ofSeconds(timeout)).build()
 
-    override fun getProduct(id: String): Product? {
-        return apiCall(unauthenticatedRequest("/products/$id", "GET"),
+    override fun getProduct(id: String): Mono<Product> {
+        val p =  apiCall(unauthenticatedGetRequest("/products/$id"),
             "getProduct",
                 object: TypeReference<CoinbaseProduct>() {},
                 arrayOf(404))
+
+        val mono: Mono<Product> = Mono.justOrEmpty(p)
+        return mono.delayElement(ofSeconds(10))
     }
 
-    override fun getOrder(id: String): Order? {
-        return apiCall(authenticatedRequest("/orders/$id", "GET", "", CoinbaseUtilities.timestamp()),
+    override fun getOrder(id: String): Mono<Order> {
+        val o = apiCall(authenticatedRequest("/orders/$id", "GET", "", CoinbaseUtilities.timestamp()),
             "getOrder",
                 object: TypeReference<CoinbaseOrder>() {},
                 arrayOf(404))
+
+        return Mono.justOrEmpty(o)
     }
 
     override fun getOrders(): Collection<Order> {
@@ -78,7 +84,9 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
         }
     }
 
-    private fun unauthenticatedRequest(path: String, method: String): HttpRequest {
+    private fun unauthenticatedGetRequest(path: String): HttpRequest {
+        val method = "GET"
+
         logger.info("{} {}", path, method)
 
         return HttpRequest.newBuilder()

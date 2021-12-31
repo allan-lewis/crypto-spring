@@ -11,7 +11,8 @@ class PositionController(@Autowired private val positionManager: PositionManager
 
     @PostMapping(path = ["/{productId}"])
     fun post(@PathVariable productId: String): Publisher<String> {
-        return positionManager.newPosition(productId)
+        TODO("not yet implemented")
+//        return positionManager.newPosition(productId)
     }
 
     @GetMapping(path = ["/{positionId}"])

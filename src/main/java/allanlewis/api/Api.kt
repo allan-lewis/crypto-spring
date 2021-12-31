@@ -1,6 +1,7 @@
 package allanlewis.api
 
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import kotlin.jvm.Throws
 
 interface WebSocketApi {
@@ -13,10 +14,10 @@ interface WebSocketApi {
 interface RestApi {
 
     @Throws(ApiException::class)
-    fun getProduct(id: String) : Product?
+    fun getProduct(id: String) : Mono<Product>
 
     @Throws(ApiException::class)
-    fun getOrder(id: String) : Order?
+    fun getOrder(id: String) : Mono<Order>
 
     @Throws(ApiException::class)
     fun getOrders(): Collection<Order>

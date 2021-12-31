@@ -70,6 +70,10 @@ class CoinbaseProduct: Product {
     @JsonProperty(value = "auction_mode")
     override var auctionMode = false
 
+    override fun toString(): String {
+        return ToStringBuilder.toString(this)
+    }
+
 }
 
 class CoinbaseOrder: Order {
@@ -136,6 +140,10 @@ class CoinbaseOrder: Order {
 
     @JsonProperty("done_reason")
     override var doneReason: String? = null
+
+    override fun toString(): String {
+        return ToStringBuilder.toString(this)
+    }
 }
 
 class SubscriptionMessage {

@@ -4,6 +4,7 @@ import allanlewis.api.PriceTick
 import allanlewis.api.WebSocketApi
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
+import reactor.tuple.Tuple2
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.concurrent.ConcurrentHashMap
@@ -14,18 +15,41 @@ interface PositionStrategy {
 
 }
 
-class AlwaysTrueStrategy() : PositionStrategy {
+abstract class AbstractPositionStrategy: PositionStrategy {
+
+    val logger = LoggerFactory.getLogger(javaClass)!!
 
     override fun openPosition(productId: String): Mono<Boolean> {
-        return Mono.just(true)
+        return Mono.just(open(productId))
+    }
+
+    abstract fun open(productId: String): Boolean
+
+}
+
+class AlwaysTrueStrategy : AbstractPositionStrategy() {
+
+    override fun open(productId: String): Boolean {
+        logger.info("Always opening a position for $productId")
+
+        return true
     }
 
 }
 
-class DayRangeStrategy(private val webSocketApi: WebSocketApi) : PositionStrategy {
+class AlwaysFalseStrategy : AbstractPositionStrategy() {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
-    private val decisions = ConcurrentHashMap<String, Boolean>()
+    override fun open(productId: String): Boolean {
+        logger.info("Never opening a position for $productId")
+
+        return false
+    }
+
+}
+
+class DayRangeStrategy(private val webSocketApi: WebSocketApi) : AbstractPositionStrategy() {
+
+    private val decisions = ConcurrentHashMap<String, Tuple2<Boolean, String>>()
 
     fun init(): DayRangeStrategy {
         webSocketApi.ticks().subscribe { tick -> decide(tick) }
@@ -48,15 +72,17 @@ class DayRangeStrategy(private val webSocketApi: WebSocketApi) : PositionStrateg
 
         logger.debug("{} {} {}...{}...{}...{} {}", tick.productId, tick.price, low.toPlainString(), start, end, high.toPlainString(), decision)
 
-        decisions[tick.productId] = decision
+        decisions[tick.productId] = Tuple2.of(decision, "" + price + "[" + start.toPlainString() + ", " + end.toPlainString() + "] " + "[" + low.toPlainString() + ", " + high.toPlainString() + "]")
     }
 
-    override fun openPosition(productId: String): Mono<Boolean> {
-        val open = decisions.getOrDefault(productId, false)
+    override fun open(productId: String): Boolean {
+        val decision = decisions.getOrDefault(productId, Tuple2.of(false, "undefined"))
 
-        logger.info("Open position for {}? {}", productId, open)
+        // Log here rather than from message() to avoid a race condition
+        logger.info("Open position for $productId: ${decision.t1} ${decision.t2}")
 
-        return Mono.just(open)
+        return false
+//        return decision
     }
 
 }

@@ -7,28 +7,21 @@ import allanlewis.api.RestApi
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import java.lang.RuntimeException
 
 class ProductRepository(private val positionConfigs: Array<PositionConfig>, private val restApi: RestApi) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
-    private val products = HashMap<String, Product>()
+    private val products = HashMap<String, Mono<Product>>()
 
+    @Suppress("ReactiveStreamsUnusedPublisher")
     fun init(): ProductRepository {
         for (pc in positionConfigs) {
             logger.info("Loading {}", pc.id)
 
             try {
-                val product = restApi.getProduct(pc.id)
-                if (product != null) {
-                    products[pc.id] = product
-                } else {
-                    logger.warn("{} not found", pc.id)
-                }
+                products[pc.id] = restApi.getProduct(pc.id)
             } catch (ex: ApiException) {
-                val errMsg = "Unable to load $pc.id"
-                logger.error(errMsg, ex)
-                throw RuntimeException(errMsg, ex)
+                logger.error("Unable to load product " + pc.id, ex)
             }
         }
 
@@ -36,11 +29,11 @@ class ProductRepository(private val positionConfigs: Array<PositionConfig>, priv
     }
     
     fun products(): Flux<Product> {
-        return Flux.fromIterable(products.values)
+        TODO("not yet implemented")
     }
 
     fun product(id: String): Mono<Product> {
-        return Mono.justOrEmpty(products[id])
+        return if (products[id] == null) Mono.empty() else products[id]!!
     }
 
 }

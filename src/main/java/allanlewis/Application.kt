@@ -5,6 +5,7 @@ import allanlewis.api.Product
 import allanlewis.api.RestApi
 import allanlewis.api.WebSocketApi
 import allanlewis.coinbase.*
+import allanlewis.orders.OrderBook
 import allanlewis.positions.*
 import allanlewis.products.ProductRepository
 import org.apache.commons.logging.Log
@@ -71,12 +72,22 @@ open class ApplicationConfiguration(private val configurationData: Configuration
     open fun positionManager(): PositionManager {
         return PositionManager(productRepository(),
                 configurationData.positionConfigs,
-                restApi(),
+                orderBook(),
                 applicationContext).init()
     }
 
     @Bean
-    open fun positionStrategy(): PositionStrategy {
+    open fun alwaysTrueStrategy(): AlwaysTrueStrategy {
+        return AlwaysTrueStrategy()
+    }
+
+    @Bean
+    open fun alwaysFalseStrategy(): AlwaysFalseStrategy {
+        return AlwaysFalseStrategy()
+    }
+
+    @Bean
+    open fun dayRangeStrategy(): DayRangeStrategy {
         return DayRangeStrategy(webSocketApi()).init()
     }
 
@@ -111,7 +122,9 @@ open class ApplicationConfiguration(private val configurationData: Configuration
 
     @Bean
     open fun webSocketApi(): WebSocketApi {
-        return CoinbaseWebSocketApiImpl(coinbaseConfigurationData, webSocketHandler()).init()
+//        return CoinbaseWebSocketApiImpl(coinbaseConfigurationData, webSocketHandler()).init()
+        //TODO: Re-introduce init
+        return CoinbaseWebSocketApiImpl(coinbaseConfigurationData, webSocketHandler())
     }
 
     @Bean
@@ -127,6 +140,11 @@ open class ApplicationConfiguration(private val configurationData: Configuration
         return order
     }
 
+    @Bean
+    open fun orderBook(): OrderBook {
+        return OrderBook(restApi()).init()
+    }
+
 }
 
 @ConstructorBinding
@@ -137,4 +155,5 @@ data class PositionConfig(val id: String,
                           val max: Int,
                           val funds: String,
                           val fee: String,
-                          val sell: String)
+                          val sell: String,
+                          val strategy: String)

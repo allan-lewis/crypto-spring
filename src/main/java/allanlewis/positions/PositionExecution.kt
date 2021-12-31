@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 import reactor.core.publisher.MonoSink
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Function
 
@@ -13,6 +14,7 @@ abstract class AbstractPositionExecution(private val doneCheck: Function<Order, 
 
     private val logger = LoggerFactory.getLogger(javaClass)
     private val order: AtomicReference<Order> = AtomicReference<Order>()
+    private val orderDone = AtomicBoolean()
 
     @JsonIgnore
     lateinit var mono: Mono<Order>
@@ -22,8 +24,10 @@ abstract class AbstractPositionExecution(private val doneCheck: Function<Order, 
         mono = Mono.create { sink: MonoSink<Order> ->
             try {
                 this.order.set(restApi.postOrder(this.order.get()))
-                while (orderNotDone()) {
+
+                while (!orderDone.get()) {
                     Thread.sleep(500)
+                    check()
                 }
                 sink.success(this.order.get())
             } catch (ex: Exception) {
@@ -34,20 +38,17 @@ abstract class AbstractPositionExecution(private val doneCheck: Function<Order, 
         return this
     }
 
-    private fun orderNotDone(): Boolean {
-        return try {
-            val order = restApi.getOrder(order.get().id!!)
-
-            if (order != null) {
-                this.order.set(order)
-                !doneCheck.apply(this.order.get())
-            } else {
-                logger.warn("Order {} not found yet", this.order.get().id)
-                true
-            }
-        } catch (ex: Exception) {
-            throw RuntimeException("Unable to check order status", ex)
-        }
+    private fun check() {
+        restApi.getOrder(this.order.get().id!!).subscribe({ o ->
+                this.order.set(o)
+                orderDone.set(doneCheck.apply(this.order.get()))
+            },
+            {
+                throwable -> logger.error("Error getting order", throwable)
+            },
+            {
+                logger.info("Order done ? {} {}", this.order.get(), orderDone.get())
+            })
     }
 
     open fun order(): Order {
