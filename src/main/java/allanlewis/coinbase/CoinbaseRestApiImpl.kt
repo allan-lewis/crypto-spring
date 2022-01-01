@@ -7,6 +7,7 @@ import allanlewis.api.RestApi
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.net.URI
 import java.net.http.HttpClient
@@ -26,8 +27,7 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
                 object: TypeReference<CoinbaseProduct>() {},
                 arrayOf(404))
 
-        val mono: Mono<Product> = Mono.justOrEmpty(p)
-        return mono.delayElement(ofSeconds(10))
+        return Mono.justOrEmpty(p)
     }
 
     override fun getOrder(id: String): Mono<Order> {
@@ -39,17 +39,21 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
         return Mono.justOrEmpty(o)
     }
 
-    override fun getOrders(): Collection<Order> {
-        return apiCall(authenticatedRequest("/orders", "GET", "", CoinbaseUtilities.timestamp()),
+    override fun getOrders(): Flux<Order> {
+        val orders = apiCall(authenticatedRequest("/orders", "GET", "", CoinbaseUtilities.timestamp()),
                 "getOrders",
                 object: TypeReference<ArrayList<CoinbaseOrder>>() {})!!
+
+        return Flux.fromIterable(orders)
     }
 
-    override fun postOrder(order: Order): Order {
+    override fun postOrder(order: Order): Mono<Order> {
         val body = ObjectMapper().writeValueAsString(order)
-        return apiCall(authenticatedRequest("/orders", "POST", body, CoinbaseUtilities.timestamp()),
+        val o =  apiCall(authenticatedRequest("/orders", "POST", body, CoinbaseUtilities.timestamp()),
             "postOrder",
             object: TypeReference<CoinbaseOrder>() {})!!
+
+        return Mono.just(o)
     }
 
     private fun <T> apiCall(request: HttpRequest, logPrefix: String, valueType: TypeReference<T>): T? {

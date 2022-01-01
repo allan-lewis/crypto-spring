@@ -20,10 +20,10 @@ interface RestApi {
     fun getOrder(id: String) : Mono<Order>
 
     @Throws(ApiException::class)
-    fun getOrders(): Collection<Order>
+    fun getOrders(): Flux<Order>
 
     @Throws(ApiException::class)
-    fun postOrder(order: Order) : Order
+    fun postOrder(order: Order) : Mono<Order>
 }
 
 class ApiException: Exception {

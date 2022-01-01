@@ -5,7 +5,6 @@ import allanlewis.api.Product
 import allanlewis.api.RestApi
 import allanlewis.api.WebSocketApi
 import allanlewis.coinbase.*
-import allanlewis.orders.OrderBook
 import allanlewis.positions.*
 import allanlewis.products.ProductRepository
 import org.apache.commons.logging.Log
@@ -74,7 +73,7 @@ open class ApplicationConfiguration(private val configurationData: Configuration
     open fun positionManager(): PositionManager {
         return PositionManager(productRepository(),
                 configurationData.positionConfigs,
-                orderBook(),
+                restApi(),
                 applicationContext).init()
     }
 
@@ -138,11 +137,6 @@ open class ApplicationConfiguration(private val configurationData: Configuration
         val order = CoinbaseOrder()
         order.profileId = coinbaseConfigurationData.profileId
         return order
-    }
-
-    @Bean
-    open fun orderBook(): OrderBook {
-        return OrderBook(restApi()).init()
     }
 
 }

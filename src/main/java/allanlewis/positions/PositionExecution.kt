@@ -23,13 +23,15 @@ abstract class AbstractPositionExecution(private val doneCheck: Function<Order, 
         this.order.set(order)
         mono = Mono.create { sink: MonoSink<Order> ->
             try {
-                this.order.set(restApi.postOrder(this.order.get()))
+                restApi.postOrder(this.order.get()).subscribe { o ->
+                    this.order.set(o)
 
-                while (!orderDone.get()) {
-                    Thread.sleep(500)
-                    check()
+                    while (!orderDone.get()) {
+                        Thread.sleep(500)
+                        check()
+                    }
+                    sink.success(this.order.get())
                 }
-                sink.success(this.order.get())
             } catch (ex: Exception) {
                 sink.error(ex)
             }

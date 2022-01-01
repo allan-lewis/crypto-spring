@@ -65,24 +65,22 @@ class DayRangeStrategy(private val webSocketApi: WebSocketApi) : AbstractPositio
 
         val increment = high.subtract(low).divide(BigDecimal(4), RoundingMode.HALF_UP)
         val start = low.add(increment)
-        val end = high.subtract(increment.multiply(BigDecimal(2)))
+        val end = high.subtract(increment)
 
         val price = BigDecimal(tick.price)
         val decision = price < end && price > start
 
         logger.debug("{} {} {}...{}...{}...{} {}", tick.productId, tick.price, low.toPlainString(), start, end, high.toPlainString(), decision)
 
-        decisions[tick.productId] = Tuple2.of(decision, "" + price + "[" + start.toPlainString() + ", " + end.toPlainString() + "] " + "[" + low.toPlainString() + ", " + high.toPlainString() + "]")
+        decisions[tick.productId] = Tuple2.of(decision, "" + price + " [" + start.toPlainString() + ", " + end.toPlainString() + "] " + "[" + low.toPlainString() + ", " + high.toPlainString() + "]")
     }
 
     override fun open(productId: String): Boolean {
         val decision = decisions.getOrDefault(productId, Tuple2.of(false, "undefined"))
 
-        // Log here rather than from message() to avoid a race condition
         logger.info("Open position for $productId: ${decision.t1} ${decision.t2}")
 
-        return false
-//        return decision
+        return decision.t1
     }
 
 }

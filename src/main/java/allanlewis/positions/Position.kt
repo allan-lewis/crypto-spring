@@ -23,7 +23,7 @@ class Position(private val positionConfig: PositionConfig,
     private val sell = applicationContext.getBean(OrderNotPending::class.java)
     private val stateChanges = ArrayList<PositionStateChange>()
 
-    private var state: PositionState = PositionState.New
+    private var state = PositionState.New
 
     val id = UUID.randomUUID().toString()
 

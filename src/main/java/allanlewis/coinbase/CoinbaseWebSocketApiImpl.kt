@@ -67,24 +67,19 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
             products.add(productRepository.product(pc.id))
         }
 
-        val ids = ArrayList<String>()
-        Flux.merge(products).subscribe({ logger.info("Subscribing for {}", it.id); ids.add(it.id!!) },
-                {logger.error("Error preparing subscription", it) },
-                {
-                    logger.info("Subscribing for {}", ids)
+        val ids = Flux.merge(products).toIterable().map { p -> p.id!! }
 
-                    val payload = subscriptionPayload(ids)
+        logger.info("Subscribing for {}", ids)
 
-                    session.send(Mono.just(payload)
-                        .map(session::textMessage))
-                        .and(session.receive().map { webSocketMessage -> handleResponse(webSocketMessage) }.log())
-                        .and(session.closeStatus().map(CloseStatus::getCode).log()).subscribe()
-                })
+        val payload = subscriptionPayload(ids)
 
-        return Mono.empty()
+        return session.send(Mono.just(payload)
+            .map(session::textMessage))
+            .and(session.receive().map { webSocketMessage -> handleResponse(webSocketMessage) }.log())
+            .and(session.closeStatus().map(CloseStatus::getCode).log())
     }
 
-    private fun subscriptionPayload(ids: java.util.ArrayList<String>): String {
+    private fun subscriptionPayload(ids: List<String>): String {
         val timestamp = timestamp()
         val signature = sign(config.secret, "/users/self/verify", "GET", "", timestamp)
 
@@ -101,7 +96,7 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
     private fun handleResponse(message: WebSocketMessage): CoinbaseWebSocketMessage {
         val coinbaseWebSocketMessage = mapper.readValue(message.payloadAsText, CoinbaseWebSocketMessage::class.java)
 
-        logger.info("{}", message.payloadAsText)
+        logger.debug("{}", message.payloadAsText)
 
         when (coinbaseWebSocketMessage.type) {
             "ticker" -> updatePrice(coinbaseWebSocketMessage)

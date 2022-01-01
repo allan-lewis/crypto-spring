@@ -7,11 +7,12 @@ import allanlewis.api.RestApi
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.util.concurrent.ConcurrentHashMap
 
 class ProductRepository(private val positionConfigs: Array<PositionConfig>, private val restApi: RestApi) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
-    private val products = HashMap<String, Mono<Product>>()
+    private val products = ConcurrentHashMap<String, Mono<Product>>()
 
     @Suppress("ReactiveStreamsUnusedPublisher")
     fun init(): ProductRepository {
@@ -29,7 +30,7 @@ class ProductRepository(private val positionConfigs: Array<PositionConfig>, priv
     }
     
     fun products(): Flux<Product> {
-        TODO("not yet implemented")
+        return Flux.merge(products.values)
     }
 
     fun product(id: String): Mono<Product> {

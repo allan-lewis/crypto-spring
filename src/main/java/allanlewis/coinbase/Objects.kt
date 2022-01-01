@@ -280,6 +280,12 @@ class CoinbaseWebSocketMessage {
     @JsonProperty("size")
     lateinit var size: String
 
+    @JsonProperty("old_funds")
+    lateinit var oldFunds: String
+
+    @JsonProperty("new_funds")
+    lateinit var newFunds: String
+
     override fun toString(): String {
         return ToStringBuilder.toString(this)
     }
