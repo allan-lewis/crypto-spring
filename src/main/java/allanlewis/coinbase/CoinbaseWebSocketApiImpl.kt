@@ -1,6 +1,8 @@
 package allanlewis.coinbase
 
+import allanlewis.PositionConfig
 import allanlewis.api.PriceTick
+import allanlewis.api.Product
 import allanlewis.api.WebSocketApi
 import allanlewis.coinbase.CoinbaseUtilities.sign
 import allanlewis.coinbase.CoinbaseUtilities.timestamp
@@ -46,23 +48,45 @@ class CoinbaseWebSocketApiImpl(private val config: CoinbaseConfigurationData,
 }
 
 class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
+                               private val positionConfigs: Array<PositionConfig>,
                                private val productRepository: ProductRepository) : WebSocketHandler {
 
     private val mapper = ObjectMapper()
-
     private val ticks = ConcurrentHashMap<String, PriceTick>()
+    private val logger = LoggerFactory.getLogger(javaClass)
     private val flux =  Flux.interval(Duration.ofMillis(500))
         .onBackpressureDrop()
         .map { ticks.values }
         .flatMapIterable { ticks -> ticks }
         .share()
 
+    @Suppress("CallingSubscribeInNonBlockingScope")
     override fun handle(session: WebSocketSession): Mono<Void> {
-        val timestamp = timestamp()
-        val signature = sign(config.secret, "/users/self/verify", "GET", "", timestamp)
+        val products = ArrayList<Mono<Product>>()
+        for (pc in positionConfigs) {
+            products.add(productRepository.product(pc.id))
+        }
 
         val ids = ArrayList<String>()
-        productRepository.products().mapNotNull { p -> ids.add(p.id!!) }.blockLast()
+        Flux.merge(products).subscribe({ logger.info("Subscribing for {}", it.id); ids.add(it.id!!) },
+                {logger.error("Error preparing subscription", it) },
+                {
+                    logger.info("Subscribing for {}", ids)
+
+                    val payload = subscriptionPayload(ids)
+
+                    session.send(Mono.just(payload)
+                        .map(session::textMessage))
+                        .and(session.receive().map { webSocketMessage -> handleResponse(webSocketMessage) }.log())
+                        .and(session.closeStatus().map(CloseStatus::getCode).log()).subscribe()
+                })
+
+        return Mono.empty()
+    }
+
+    private fun subscriptionPayload(ids: java.util.ArrayList<String>): String {
+        val timestamp = timestamp()
+        val signature = sign(config.secret, "/users/self/verify", "GET", "", timestamp)
 
         val message = SubscriptionMessage ()
         message.signature = signature
@@ -71,16 +95,13 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
         message.timestamp = timestamp
         message.productIds = ids.toTypedArray()
 
-        val payload =  ObjectMapper().writeValueAsString(message)
-
-        return session.send(Mono.just(payload)
-            .map(session::textMessage))
-            .and(session.receive().map { webSocketMessage -> handleResponse(webSocketMessage) }.log())
-            .and(session.closeStatus().map(CloseStatus::getCode).log())
+        return ObjectMapper().writeValueAsString(message)
     }
 
     private fun handleResponse(message: WebSocketMessage): CoinbaseWebSocketMessage {
         val coinbaseWebSocketMessage = mapper.readValue(message.payloadAsText, CoinbaseWebSocketMessage::class.java)
+
+        logger.info("{}", message.payloadAsText)
 
         when (coinbaseWebSocketMessage.type) {
             "ticker" -> updatePrice(coinbaseWebSocketMessage)

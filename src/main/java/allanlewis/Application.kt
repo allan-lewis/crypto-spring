@@ -33,13 +33,10 @@ open class Application : InitializingBean {
     private val logger = LoggerFactory.getLogger(Application::class.java)
 
     override fun afterPropertiesSet() {
-        SysOutOverSLF4J.sendSystemOutAndErrToSLF4J()
         println("logged via system.out")
         System.err.println("logged via system.err")
 
-        SLF4JBridgeHandler.removeHandlersForRootLogger()
-        SLF4JBridgeHandler.install()
-        val julLogger = java.util.logging.Logger.getLogger(Application::class.java.getName())
+        val julLogger = java.util.logging.Logger.getLogger(Application::class.java.name)
         julLogger.info("logged via jul")
 
         val log4JLogger: Logger = Logger.getLogger(Application::class.java)
@@ -54,6 +51,11 @@ open class Application : InitializingBean {
 }
 
 fun main(args: Array<String>) {
+
+    SysOutOverSLF4J.sendSystemOutAndErrToSLF4J()
+    SLF4JBridgeHandler.removeHandlersForRootLogger()
+    SLF4JBridgeHandler.install()
+
     runApplication<Application>(*args)
 }
 
@@ -122,14 +124,12 @@ open class ApplicationConfiguration(private val configurationData: Configuration
 
     @Bean
     open fun webSocketApi(): WebSocketApi {
-//        return CoinbaseWebSocketApiImpl(coinbaseConfigurationData, webSocketHandler()).init()
-        //TODO: Re-introduce init
-        return CoinbaseWebSocketApiImpl(coinbaseConfigurationData, webSocketHandler())
+        return CoinbaseWebSocketApiImpl(coinbaseConfigurationData, webSocketHandler()).init()
     }
 
     @Bean
     open fun webSocketHandler(): CoinbaseWebSocketHandler {
-        return CoinbaseWebSocketHandler(coinbaseConfigurationData, productRepository())
+        return CoinbaseWebSocketHandler(coinbaseConfigurationData, configurationData.positionConfigs, productRepository())
     }
 
     @Bean
