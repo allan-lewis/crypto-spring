@@ -55,9 +55,7 @@ class PositionManager(private val productRepository: ProductRepository,
     }
 
     fun newPosition(productId: String): Mono<String> {
-        val product = productRepository.product(productId).blockOptional()
-
-        return if (product.isEmpty) Mono.empty() else newPosition(product.get())
+        return productRepository.product(productId).flatMap { p -> newPosition(p) }
     }
 
     private fun newPosition(product: Product): Mono<String> {

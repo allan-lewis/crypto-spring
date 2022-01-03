@@ -89,7 +89,7 @@ open class ApplicationConfiguration(private val configurationData: Configuration
 
     @Bean
     open fun dayRangeStrategy(): DayRangeStrategy {
-        return DayRangeStrategy(webSocketApi()).init()
+        return DayRangeStrategy(configurationData.positionConfigs, coinbaseConfigurationData.accountId, restApi(), webSocketApi()).init()
     }
 
     @Bean

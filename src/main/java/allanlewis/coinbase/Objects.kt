@@ -2,9 +2,7 @@
 
 package allanlewis.coinbase
 
-import allanlewis.api.Order
-import allanlewis.api.PriceTick
-import allanlewis.api.Product
+import allanlewis.api.*
 import allanlewis.utility.ToStringBuilder
 import com.fasterxml.jackson.annotation.JsonProperty
 
@@ -299,5 +297,34 @@ class Channel {
 
     @JsonProperty("product_ids")
     lateinit var productIds: Array<String>
+
+}
+
+class CoinbaseAccount : Account {
+
+    @JsonProperty("id")
+    override var id: String? = null
+
+    @JsonProperty("currency")
+    override var currency: String? = null
+
+    @JsonProperty("balance")
+    override var balance: String? = null
+
+    @JsonProperty("hold")
+    var hold: String? = null
+
+    @JsonProperty("available")
+    var available: String? = null
+
+    @JsonProperty("profile_id")
+    var profileId: String? = null
+
+    @JsonProperty("trading_enabled")
+    var tradingEnabled: Boolean = false
+
+    override fun toString(): String {
+        return ToStringBuilder.toString(this)
+    }
 
 }

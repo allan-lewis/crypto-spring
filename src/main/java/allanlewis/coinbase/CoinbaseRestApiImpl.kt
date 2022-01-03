@@ -1,9 +1,6 @@
 package allanlewis.coinbase
 
-import allanlewis.api.ApiException
-import allanlewis.api.Order
-import allanlewis.api.Product
-import allanlewis.api.RestApi
+import allanlewis.api.*
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
@@ -54,6 +51,24 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
             object: TypeReference<CoinbaseOrder>() {})!!
 
         return Mono.just(o)
+    }
+
+    override fun getAccount(id: String): Mono<Account> {
+        val account = apiCall(authenticatedRequest("/accounts/$id", "GET", "", CoinbaseUtilities.timestamp()),
+            "getAccount",
+            object: TypeReference<CoinbaseAccount>() {},
+            arrayOf(404))
+
+        return Mono.justOrEmpty(account)
+    }
+
+    override fun getAccounts(): Flux<Account> {
+        val accounts = apiCall(authenticatedRequest("/accounts", "GET", "", CoinbaseUtilities.timestamp()),
+            "getAccounts",
+            object: TypeReference<List<CoinbaseAccount>>() {},
+            arrayOf(404))
+
+        return Flux.fromIterable(accounts)
     }
 
     private fun <T> apiCall(request: HttpRequest, logPrefix: String, valueType: TypeReference<T>): T? {

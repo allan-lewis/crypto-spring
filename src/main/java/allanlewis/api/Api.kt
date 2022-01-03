@@ -24,6 +24,13 @@ interface RestApi {
 
     @Throws(ApiException::class)
     fun postOrder(order: Order) : Mono<Order>
+
+    @Throws(ApiException::class)
+    fun getAccounts() : Flux<Account>
+
+    @Throws(ApiException::class)
+    fun getAccount(id: String) : Mono<Account>
+
 }
 
 class ApiException: Exception {
@@ -90,5 +97,13 @@ interface PriceTick {
     var twentyFourHourVolume: String
     var twentyFourHourHigh: String
     var twentyFourHourLow: String
+
+}
+
+interface Account {
+
+    var id: String?
+    var currency: String?
+    var balance: String?
 
 }

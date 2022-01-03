@@ -60,7 +60,6 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
         .flatMapIterable { ticks -> ticks }
         .share()
 
-    @Suppress("CallingSubscribeInNonBlockingScope")
     override fun handle(session: WebSocketSession): Mono<Void> {
         val products = ArrayList<Mono<Product>>()
         for (pc in positionConfigs) {

@@ -1,6 +1,8 @@
 package allanlewis.positions
 
+import allanlewis.PositionConfig
 import allanlewis.api.PriceTick
+import allanlewis.api.RestApi
 import allanlewis.api.WebSocketApi
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
@@ -20,34 +22,57 @@ abstract class AbstractPositionStrategy: PositionStrategy {
     val logger = LoggerFactory.getLogger(javaClass)!!
 
     override fun openPosition(productId: String): Mono<Boolean> {
-        return Mono.just(open(productId))
+        return open(productId)
     }
 
-    abstract fun open(productId: String): Boolean
+    abstract fun open(productId: String): Mono<Boolean>
 
 }
 
 class AlwaysTrueStrategy : AbstractPositionStrategy() {
 
-    override fun open(productId: String): Boolean {
+    override fun open(productId: String): Mono<Boolean> {
         logger.info("Always opening a position for $productId")
 
-        return true
+        return Mono.just(true)
     }
 
 }
 
 class AlwaysFalseStrategy : AbstractPositionStrategy() {
 
-    override fun open(productId: String): Boolean {
+    override fun open(productId: String): Mono<Boolean> {
         logger.info("Never opening a position for $productId")
 
-        return false
+        return Mono.just(false)
     }
 
 }
 
-class DayRangeStrategy(private val webSocketApi: WebSocketApi) : AbstractPositionStrategy() {
+abstract class AbstractCheckFundsStrategy : AbstractPositionStrategy() {
+
+    override fun open(productId: String): Mono<Boolean> {
+        return checkFunds(productId).flatMap { funds -> if (funds) {
+            logger.info("Sufficient  funds for {}", productId)
+
+            shouldOpen(productId)
+        } else {
+            logger.info("Insufficient funds for {}", productId)
+
+            Mono.just(false) }
+        }
+    }
+
+    abstract fun checkFunds(productId: String): Mono<Boolean>
+
+    abstract fun shouldOpen(productId: String): Mono<Boolean>
+
+}
+
+class DayRangeStrategy(private val positionConfigs: Array<PositionConfig>,
+                       private val accountId: String,
+                       private val restApi: RestApi,
+                       private val webSocketApi: WebSocketApi) : AbstractCheckFundsStrategy() {
 
     private val decisions = ConcurrentHashMap<String, Tuple2<Boolean, String>>()
 
@@ -75,12 +100,27 @@ class DayRangeStrategy(private val webSocketApi: WebSocketApi) : AbstractPositio
         decisions[tick.productId] = Tuple2.of(decision, "" + price + " [" + start.toPlainString() + ", " + end.toPlainString() + "] " + "[" + low.toPlainString() + ", " + high.toPlainString() + "]")
     }
 
-    override fun open(productId: String): Boolean {
+    override fun shouldOpen(productId: String): Mono<Boolean> {
         val decision = decisions.getOrDefault(productId, Tuple2.of(false, "undefined"))
 
         logger.info("Open position for $productId: ${decision.t1} ${decision.t2}")
 
-        return decision.t1
+        return Mono.just(decision.t1)
+    }
+
+    override fun checkFunds(productId: String): Mono<Boolean> {
+        var min = BigDecimal.ZERO
+        for (pc in positionConfigs) {
+            if (pc.id == productId) {
+                min = BigDecimal(pc.funds)
+            }
+        }
+
+        return restApi.getAccount(accountId).map { account ->
+            logger.info("For currency {} have balance {} (min {})", account.currency, account.balance, min)
+
+            BigDecimal(account.balance) > min
+        }
     }
 
 }
