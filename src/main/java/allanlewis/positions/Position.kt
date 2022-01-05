@@ -2,10 +2,10 @@ package allanlewis.positions
 
 import allanlewis.PositionConfig
 import allanlewis.api.Order
+import allanlewis.api.OrderFactory
 import allanlewis.api.Product
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.slf4j.LoggerFactory
-import org.springframework.context.ApplicationContext
 import reactor.core.publisher.Mono
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -16,11 +16,11 @@ import java.util.*
 
 class Position(private val positionConfig: PositionConfig,
                private val product: Product,
-               private val applicationContext: ApplicationContext) {
+               private val buy: AbstractPositionExecution,
+               private val sell: AbstractPositionExecution,
+               private val orderFactory: OrderFactory) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
-    private val buy = applicationContext.getBean(OrderDone::class.java)
-    private val sell = applicationContext.getBean(OrderNotPending::class.java)
     private val stateChanges = ArrayList<PositionStateChange>()
 
     private var state = PositionState.New
@@ -59,7 +59,7 @@ class Position(private val positionConfig: PositionConfig,
     private fun buy(): Mono<Order> {
         changeState(PositionState.BuyOrderPending)
 
-        val order = applicationContext.getBean(Order::class.java)
+        val order = orderFactory.order()
         order.productId = product.id
         order.side = "buy"
         order.type = "market"
@@ -98,7 +98,7 @@ class Position(private val positionConfig: PositionConfig,
 
         logger.info("Selling {} {} {} {} {}", boughtSize, fee, funds, size, price)
 
-        val order = applicationContext.getBean(Order::class.java)
+        val order = orderFactory.order()
         order.productId = product.id
         order.side = "sell"
         order.size = size.toPlainString()
@@ -157,5 +157,17 @@ enum class PositionState {
     SellOrderFilled,
     SellOrderCanceled,
     SellOrderFailed
+
+}
+
+interface PositionFactory {
+
+    fun position(product: Product): Position
+
+}
+
+interface PositionStrategyFactory {
+
+    fun strategy(name: String): PositionStrategy
 
 }

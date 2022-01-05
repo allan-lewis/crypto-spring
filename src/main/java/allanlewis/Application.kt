@@ -1,9 +1,6 @@
 package allanlewis
 
-import allanlewis.api.Order
-import allanlewis.api.Product
-import allanlewis.api.RestApi
-import allanlewis.api.WebSocketApi
+import allanlewis.api.*
 import allanlewis.coinbase.*
 import allanlewis.positions.*
 import allanlewis.products.ProductRepository
@@ -72,9 +69,10 @@ open class ApplicationConfiguration(private val configurationData: Configuration
     @Bean
     open fun positionManager(): PositionManager {
         return PositionManager(productRepository(),
-                configurationData.positionConfigs,
-                restApi(),
-                applicationContext).init()
+            configurationData.positionConfigs,
+            positionFactory(),
+            positionStrategyFactory(),
+            restApi()).init()
     }
 
     @Bean
@@ -93,15 +91,31 @@ open class ApplicationConfiguration(private val configurationData: Configuration
     }
 
     @Bean
-    @Scope(BeanDefinition.SCOPE_PROTOTYPE)
-    open fun position(product: Product): Position {
-        for (pc in configurationData.positionConfigs) {
-            if (pc.id == product.id) {
-                return Position(pc, product, applicationContext)
-            }
-        }
+    open fun positionFactory(): PositionFactory {
+        return object : PositionFactory {
 
-        throw IllegalArgumentException("No config for " + product.id)
+            override fun position(product: Product): Position {
+                for (pc in configurationData.positionConfigs) {
+                    if (pc.id == product.id) {
+                        return Position(pc, product, orderDone()!!, orderNotPending()!!, orderFactory())
+                    }
+                }
+
+                throw IllegalArgumentException("No config for " + product.id)
+            }
+
+        }
+    }
+
+    @Bean
+    open fun positionStrategyFactory(): PositionStrategyFactory {
+        return object : PositionStrategyFactory {
+
+            override fun strategy(name: String): PositionStrategy {
+                return applicationContext.getBean(name, PositionStrategy::class.java)
+            }
+
+        }
     }
 
     @Bean
@@ -128,7 +142,7 @@ open class ApplicationConfiguration(private val configurationData: Configuration
 
     @Bean
     open fun webSocketHandler(): CoinbaseWebSocketHandler {
-        return CoinbaseWebSocketHandler(coinbaseConfigurationData, configurationData.positionConfigs, productRepository())
+        return CoinbaseWebSocketHandler(coinbaseConfigurationData, productRepository())
     }
 
     @Bean
@@ -137,6 +151,17 @@ open class ApplicationConfiguration(private val configurationData: Configuration
         val order = CoinbaseOrder()
         order.profileId = coinbaseConfigurationData.profileId
         return order
+    }
+
+    @Bean
+    open fun orderFactory(): OrderFactory {
+
+        return object : OrderFactory {
+            override fun order(): Order {
+                return order()
+            }
+
+        }
     }
 
 }

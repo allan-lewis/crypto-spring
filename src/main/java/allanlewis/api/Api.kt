@@ -107,3 +107,9 @@ interface Account {
     var balance: String?
 
 }
+
+interface OrderFactory {
+
+    fun order(): Order
+
+}

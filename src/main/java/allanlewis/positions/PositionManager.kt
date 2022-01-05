@@ -7,7 +7,6 @@ import allanlewis.api.RestApi
 import allanlewis.products.ProductRepository
 import org.reactivestreams.Publisher
 import org.slf4j.LoggerFactory
-import org.springframework.context.ApplicationContext
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Duration
@@ -16,8 +15,9 @@ import kotlin.collections.ArrayList
 
 class PositionManager(private val productRepository: ProductRepository,
                       private val positionConfigs: Array<PositionConfig>,
-                      private val restApi: RestApi,
-                      private val applicationContext: ApplicationContext) {
+                      private val positionFactory: PositionFactory,
+                      private val positionStrategyFactory: PositionStrategyFactory,
+                      private val restApi: RestApi) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
     private val positions = ConcurrentHashMap<String, Position>()
@@ -43,7 +43,7 @@ class PositionManager(private val productRepository: ProductRepository,
 
                     if (orderCount < config.max) {
                         logger.info("For {} order count is {} (max {}), considering opening a position", product.id, orderCount, config.max)
-                        applicationContext.getBean(config.strategy, PositionStrategy::class.java)
+                        positionStrategyFactory.strategy(config.strategy)
                             .openPosition(product.id!!)
                             .log()
                             .subscribe { b -> if (b) newPosition(product).log().subscribe() }
@@ -59,7 +59,7 @@ class PositionManager(private val productRepository: ProductRepository,
     }
 
     private fun newPosition(product: Product): Mono<String> {
-        val position = applicationContext.getBean(Position::class.java, product)
+        val position = positionFactory.position(product)
 
         logger.info("Opening a new position for {}  {}", product.id, position.id)
 

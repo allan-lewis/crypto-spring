@@ -1,8 +1,6 @@
 package allanlewis.coinbase
 
-import allanlewis.PositionConfig
 import allanlewis.api.PriceTick
-import allanlewis.api.Product
 import allanlewis.api.WebSocketApi
 import allanlewis.coinbase.CoinbaseUtilities.sign
 import allanlewis.coinbase.CoinbaseUtilities.timestamp
@@ -21,7 +19,6 @@ import java.net.URI
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import javax.websocket.ContainerProvider
-import kotlin.collections.ArrayList
 
 class CoinbaseWebSocketApiImpl(private val config: CoinbaseConfigurationData,
                                private val webSocketHandler: CoinbaseWebSocketHandler): WebSocketApi {
@@ -48,7 +45,6 @@ class CoinbaseWebSocketApiImpl(private val config: CoinbaseConfigurationData,
 }
 
 class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
-                               private val positionConfigs: Array<PositionConfig>,
                                private val productRepository: ProductRepository) : WebSocketHandler {
 
     private val mapper = ObjectMapper()
@@ -61,18 +57,13 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
         .share()
 
     override fun handle(session: WebSocketSession): Mono<Void> {
-        val products = ArrayList<Mono<Product>>()
-        for (pc in positionConfigs) {
-            products.add(productRepository.product(pc.id))
-        }
+        val subscription = productRepository.products().map { p ->
+            logger.info("Subscribing for {}", p.id)
 
-        val ids = Flux.merge(products).toIterable().map { p -> p.id!! }
+            p.id!!
+        }.collectList().map { list -> subscriptionPayload(list) }
 
-        logger.info("Subscribing for {}", ids)
-
-        val payload = subscriptionPayload(ids)
-
-        return session.send(Mono.just(payload)
+        return session.send(subscription
             .map(session::textMessage))
             .and(session.receive().map { webSocketMessage -> handleResponse(webSocketMessage) }.log())
             .and(session.closeStatus().map(CloseStatus::getCode).log())
