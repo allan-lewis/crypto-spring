@@ -60,7 +60,7 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
         val subscription = productRepository.products().map { p ->
             logger.info("Subscribing for {}", p.id)
 
-            p.id!!
+            p.id
         }.collectList().map { list -> subscriptionPayload(list) }
 
         return session.send(subscription

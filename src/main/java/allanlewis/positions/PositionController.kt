@@ -15,12 +15,12 @@ class PositionController(@Autowired private val positionManager: PositionManager
     }
 
     @GetMapping
-    fun get(): Publisher<PositionJson> {
+    fun get(): Publisher<PositionSummary> {
         return positionManager.getPositions()
     }
 
     @GetMapping(path = ["/{positionId}"])
-    fun get(@PathVariable positionId: String): Publisher<PositionJson> {
+    fun get(@PathVariable positionId: String): Publisher<PositionSummary> {
         return positionManager.getPosition(positionId)
     }
 

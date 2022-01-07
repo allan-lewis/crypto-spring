@@ -17,13 +17,13 @@ interface RestApi {
     fun getProduct(id: String) : Mono<Product>
 
     @Throws(ApiException::class)
-    fun getOrder(id: String) : Mono<Order>
+    fun getOrder(id: String) : Mono<ReadOrder>
 
     @Throws(ApiException::class)
-    fun getOrders(): Flux<Order>
+    fun getOrders(): Flux<ReadOrder>
 
     @Throws(ApiException::class)
-    fun postOrder(order: Order) : Mono<Order>
+    fun postOrder(order: WriteOrder) : Mono<ReadOrder>
 
     @Throws(ApiException::class)
     fun getAccounts() : Flux<Account>
@@ -47,29 +47,40 @@ interface Product {
 
 }
 
-interface Order {
+interface BaseOrder {
 
-    var id: String?
-    var clientId: String?
-    var price: String?
-    var size: String?
-    var productId: String?
-    var profileId: String?
-    var side: String?
-    var type: String?
-    var timeInForce: String?
-    var postOnly: Boolean
-    var createdAt: String?
-    var fillFees: String?
-    var filledSize: String?
-    var executedValue: String?
-    var status: String?
-    var settled: Boolean
-    var stop: String?
-    var funds: String?
-    var specifiedFunds: String?
-    var doneAt: String?
-    var doneReason: String?
+    val type: String
+    val side: String
+    val productId: String
+    val profileId: String
+    val clientId: String
+
+}
+
+interface ReadOrder: BaseOrder {
+
+    val id: String
+    val status: String
+    val doneReason: String
+    val filledSize: String
+
+}
+
+interface WriteOrder: BaseOrder {
+
+}
+
+interface MarketOrder: WriteOrder {
+
+    val funds: String
+
+}
+
+interface LimitOrder : WriteOrder {
+
+    val price: String
+    val size: String
+
 }
 
 interface PriceTick {
@@ -94,6 +105,8 @@ interface Account {
 
 interface OrderFactory {
 
-    fun order(): Order
+    fun marketOrder(productId: String, side: String, funds: String, clientId: String): MarketOrder
+
+    fun limitOrder(productId: String, side: String, price: String, size: String, clientId: String): LimitOrder
 
 }

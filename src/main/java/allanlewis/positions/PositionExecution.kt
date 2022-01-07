@@ -1,7 +1,6 @@
 package allanlewis.positions
 
-import allanlewis.api.Order
-import allanlewis.api.RestApi
+import allanlewis.api.*
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 import reactor.util.retry.Retry
@@ -12,12 +11,12 @@ abstract class AbstractPositionExecution(private val restApi: RestApi) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    open fun execute(order: Order): Mono<Order> {
+    open fun execute(order: WriteOrder): Mono<ReadOrder> {
         return restApi.postOrder(order)
-            .flatMap{ o -> checkDone(o.id!!).retryWhen(Retry.backoff(10, Duration.ofMillis(100))) }
+            .flatMap{ o -> checkDone(o.id).retryWhen(Retry.backoff(10, Duration.ofMillis(100))) }
     }
 
-    private fun checkDone(orderId: String): Mono<Order> {
+    private fun checkDone(orderId: String): Mono<ReadOrder> {
         logger.info("Checking if done {}", orderId)
 
         return restApi.getOrder(orderId).flatMap { o ->
@@ -27,13 +26,13 @@ abstract class AbstractPositionExecution(private val restApi: RestApi) {
         }.switchIfEmpty(Mono.error(IllegalStateException("Order not found")))
     }
 
-    abstract fun done(order: Order): Boolean
+    abstract fun done(order: ReadOrder): Boolean
 
 }
 
 class OrderDone(restApi: RestApi) : AbstractPositionExecution(restApi) {
 
-    override fun done(order: Order): Boolean {
+    override fun done(order: ReadOrder): Boolean {
         return "done" == order.status
     }
 
@@ -41,7 +40,7 @@ class OrderDone(restApi: RestApi) : AbstractPositionExecution(restApi) {
 
 class OrderNotPending(restApi: RestApi) : AbstractPositionExecution(restApi) {
 
-    override fun done(order: Order): Boolean {
+    override fun done(order: ReadOrder): Boolean {
         return "pending" != order.status
     }
 

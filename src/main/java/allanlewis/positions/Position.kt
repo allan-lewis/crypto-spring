@@ -1,10 +1,9 @@
 package allanlewis.positions
 
 import allanlewis.PositionConfig
-import allanlewis.api.Order
 import allanlewis.api.OrderFactory
 import allanlewis.api.Product
-import com.fasterxml.jackson.databind.ObjectMapper
+import allanlewis.api.ReadOrder
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 import java.math.BigDecimal
@@ -22,11 +21,10 @@ class Position(private val positionConfig: PositionConfig,
 
     private val logger = LoggerFactory.getLogger(javaClass)
     private val stateChanges = ArrayList<PositionStateChange>()
-    private val mapper = ObjectMapper()
 
     private var state = PositionState.New
-    private var buyOrder: Order? = null
-    private var sellOrder: Order? = null
+    private var buyOrder: ReadOrder? = null
+    private var sellOrder: ReadOrder? = null
 
     val id = UUID.randomUUID().toString()
 
@@ -52,21 +50,14 @@ class Position(private val positionConfig: PositionConfig,
         }
     }
 
-    private fun buy(): Mono<Order> {
+    private fun buy(): Mono<ReadOrder> {
         changeState(PositionState.BuyOrderPending)
 
-        val order = orderFactory.order()
-        order.productId = product.id
-        order.side = "buy"
-        order.type = "market"
-        order.funds = positionConfig.funds
-        order.clientId = "B" + this.id
-
-        return buy.execute(order)
+        return buy.execute(orderFactory.marketOrder(product.id, "buy", positionConfig.funds, "B" + this.id))
     }
 
     private fun sellPosition() {
-        sell(buyOrder!!.filledSize!!).log().subscribe({ order ->
+        sell(buyOrder!!.filledSize).log().subscribe({ order ->
             changeState(order,
                 PositionState.SellOrderOpen,
                 PositionState.SellOrderFilled,
@@ -78,7 +69,7 @@ class Position(private val positionConfig: PositionConfig,
         }) { changeState(PositionState.SellOrderFailed) }
     }
 
-    private fun sell(boughtSize: String): Mono<Order> {
+    private fun sell(boughtSize: String): Mono<ReadOrder> {
         changeState(PositionState.SellOrderPending)
 
         val fee = BigDecimal.ONE.add(BigDecimal(positionConfig.fee))
@@ -94,17 +85,10 @@ class Position(private val positionConfig: PositionConfig,
 
         logger.info("Selling {} {} {} {} {}", boughtSize, fee, funds, size, price)
 
-        val order = orderFactory.order()
-        order.productId = product.id
-        order.side = "sell"
-        order.size = size.toPlainString()
-        order.price = price.toPlainString()
-        order.clientId = "S" + this.id
-
-        return sell.execute(order)
+        return sell.execute(orderFactory.limitOrder(product.id, "sell", price.toPlainString(), size.toPlainString(), "S" + this.id))
     }
 
-    private fun changeState(order: Order,
+    private fun changeState(order: ReadOrder,
                             openState: PositionState?,
                             filledState: PositionState,
                             cancelledState: PositionState,
@@ -130,15 +114,19 @@ class Position(private val positionConfig: PositionConfig,
             ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_DATE_TIME)))
     }
 
-    fun json(): Mono<PositionJson> {
-        val buy = mapper.readValue(mapper.writeValueAsString(buyOrder), Order::class.java)
-        val sell = mapper.readValue(mapper.writeValueAsString(sellOrder), Order::class.java)
+    fun json(): Mono<PositionSummary> {
         val changes = stateChanges.map { it.copy() }.toTypedArray()
 
-        return Mono.just(PositionJson(this.id, this.state, buy, sell, changes))
+        return Mono.just(PositionSummary(this.id, this.state, buyOrder, sellOrder, changes))
     }
 
 }
+
+data class PositionSummary(val id: String,
+                           val state: PositionState,
+                           val buy: ReadOrder?,
+                           val sell: ReadOrder?,
+                           val changes: Array<PositionStateChange>)
 
 data class PositionStateChange(val oldState: PositionState, val newState: PositionState, val timestamp: String)
 
@@ -157,12 +145,6 @@ enum class PositionState {
     SellOrderFailed
 
 }
-
-data class PositionJson(val id: String,
-                        val state: PositionState,
-                        val buy: Order?,
-                        val sell: Order?,
-                        val changes: Array<PositionStateChange>)
 
 interface PositionFactory {
 

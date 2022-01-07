@@ -3,7 +3,6 @@
 package allanlewis.coinbase
 
 import allanlewis.api.*
-import allanlewis.utility.ToStringBuilder
 import com.fasterxml.jackson.annotation.JsonProperty
 
 data class CoinbaseProduct(@JsonProperty("id") override val id: String,
@@ -27,75 +26,112 @@ data class CoinbaseProduct(@JsonProperty("id") override val id: String,
                            @JsonProperty("status_message") val statusMessage: String,
                            @JsonProperty("auction_mode") val auctionMode: Boolean): Product
 
-class CoinbaseOrder: Order {
+abstract class CoinbaseBaseOrder(@JsonProperty("type") override val type: String,
+                                 @JsonProperty("side") override val side: String,
+                                 @JsonProperty("product_id") override val productId: String,
+                                 @JsonProperty("profile_id") override val profileId: String,
+                                 @JsonProperty("client_id") override val clientId: String): BaseOrder
 
-    @JsonProperty("id")
-    override var id: String? = null
+data class CoinbaseOrder(@JsonProperty("id") override val id: String,
+                         @JsonProperty("status") override val status: String,
+                         @JsonProperty("done_reason") override val doneReason: String,
+                         @JsonProperty("filled_size") override val filledSize: String,
+                         override val type: String,
+                         override val side: String,
+                         override val productId: String,
+                         override val profileId: String,
+                         override val clientId: String) : CoinbaseBaseOrder(type, side, productId, profileId, clientId), ReadOrder
 
-    @JsonProperty("client_oid")
-    override var clientId: String? = null
+data class CoinbaseMarketOrder(@JsonProperty("side") override val side: String,
+                               @JsonProperty("funds") override val funds: String,
+                               override val productId: String,
+                               override val profileId: String,
+                               override val clientId: String): CoinbaseBaseOrder("market", side, productId, profileId, clientId), MarketOrder
 
-    @JsonProperty("price")
-    override var price: String? = null
+data class CoinbaseLimitOrder(@JsonProperty("side") override val side: String,
+                              @JsonProperty("price") override val price: String,
+                              @JsonProperty("size") override val size: String,
+                              override val productId: String,
+                              override val profileId: String,
+                              override val clientId: String): CoinbaseBaseOrder("limit", side, productId, profileId, clientId), LimitOrder
 
-    @JsonProperty("size")
-    override var size: String? = null
+/*
+        order.productId = product.id
+        order.side = "buy"
+        order.type = "market"
+        order.funds = positionConfig.funds
+        order.clientId = "B" + this.id
+ */
 
-    @JsonProperty("product_id")
-    override var productId: String? = null
+//{
 
-    @JsonProperty("profile_id")
-    override var profileId: String? = null
-
-    @JsonProperty("side")
-    override var side: String? = null
-
-    @JsonProperty("type")
-    override var type: String? = null
-
-    @JsonProperty("time_in_force")
-    override var timeInForce: String? = null
-
-    @JsonProperty("post_only")
-    override var postOnly = false
-
-    @JsonProperty("created_at")
-    override var createdAt: String? = null
-
-    @JsonProperty("fill_fees")
-    override var fillFees: String? = null
-
-    @JsonProperty("filled_size")
-    override var filledSize: String? = null
-
-    @JsonProperty("executed_value")
-    override var executedValue: String? = null
-
-    @JsonProperty("status")
-    override var status: String? = null
-
-    @JsonProperty("settled")
-    override var settled = false
-
-    @JsonProperty("stp")
-    override var stop: String? = null
-
-    @JsonProperty("funds")
-    override var funds: String? = null
-
-    @JsonProperty("specified_funds")
-    override var specifiedFunds: String? = null
-
-    @JsonProperty("done_at")
-    override var doneAt: String? = null
-
-    @JsonProperty("done_reason")
-    override var doneReason: String? = null
-
-    override fun toString(): String {
-        return ToStringBuilder.toString(this)
-    }
-}
+//    @JsonProperty("id")
+//    override var id: String? = null
+//
+//    @JsonProperty("client_oid")
+//    override var clientId: String? = null
+//
+//    @JsonProperty("price")
+//    override var price: String? = null
+//
+//    @JsonProperty("size")
+//    override var size: String? = null
+//
+//    @JsonProperty("product_id")
+//    override var productId: String? = null
+//
+//    @JsonProperty("profile_id")
+//    override var profileId: String? = null
+//
+//    @JsonProperty("side")
+//    override var side: String? = null
+//
+//    @JsonProperty("type")
+//    override var type: String? = null
+//
+//    @JsonProperty("time_in_force")
+//    override var timeInForce: String? = null
+//
+//    @JsonProperty("post_only")
+//    override var postOnly = false
+//
+//    @JsonProperty("created_at")
+//    override var createdAt: String? = null
+//
+//    @JsonProperty("fill_fees")
+//    override var fillFees: String? = null
+//
+//    @JsonProperty("filled_size")
+//    override var filledSize: String? = null
+//
+//    @JsonProperty("executed_value")
+//    override var executedValue: String? = null
+//
+//    @JsonProperty("status")
+//    override var status: String? = null
+//
+//    @JsonProperty("settled")
+//    override var settled = false
+//
+//    @JsonProperty("stp")
+//    override var stop: String? = null
+//
+//    @JsonProperty("funds")
+//    override var funds: String? = null
+//
+//    @JsonProperty("specified_funds")
+//    override var specifiedFunds: String? = null
+//
+//    @JsonProperty("done_at")
+//    override var doneAt: String? = null
+//
+//    @JsonProperty("done_reason")
+//    override var doneReason: String? = null
+//
+//    override fun toString(): String {
+//        return ToStringBuilder.toString(this)
+//    }
+//}
 
 class SubscriptionMessage {
 
@@ -129,10 +165,6 @@ class CoinbasePriceTick(override var price: String,
                         override var twentyFourHourVolume: String,
                         override var twentyFourHourHigh: String,
                         override var twentyFourHourLow: String) : PriceTick {
-
-    override fun toString(): String {
-        return ToStringBuilder.toString(this)
-    }
 
 }
 
@@ -237,10 +269,6 @@ class CoinbaseWebSocketMessage {
     @JsonProperty("new_funds")
     lateinit var newFunds: String
 
-    override fun toString(): String {
-        return ToStringBuilder.toString(this)
-    }
-
 }
 
 class Channel {
@@ -275,9 +303,5 @@ class CoinbaseAccount : Account {
 
     @JsonProperty("trading_enabled")
     var tradingEnabled: Boolean = false
-
-    override fun toString(): String {
-        return ToStringBuilder.toString(this)
-    }
 
 }

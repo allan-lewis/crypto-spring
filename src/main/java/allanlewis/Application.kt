@@ -146,19 +146,20 @@ open class ApplicationConfiguration(private val configurationData: Configuration
     }
 
     @Bean
-    @Scope(BeanDefinition.SCOPE_PROTOTYPE)
-    open fun order(): Order {
-        val order = CoinbaseOrder()
-        order.profileId = coinbaseConfigurationData.profileId
-        return order
-    }
-
-    @Bean
     open fun orderFactory(): OrderFactory {
 
         return object : OrderFactory {
-            override fun order(): Order {
-                return order()
+
+            override fun marketOrder(
+                productId: String,
+                side: String,
+                funds: String,
+                clientId: String): MarketOrder {
+                return CoinbaseMarketOrder(side, funds, productId, coinbaseConfigurationData.profileId, clientId)
+            }
+
+            override fun limitOrder(productId: String, side: String, price: String, size: String, clientId: String): LimitOrder {
+                return CoinbaseLimitOrder(side, price, size, productId, coinbaseConfigurationData.profileId, clientId)
             }
 
         }

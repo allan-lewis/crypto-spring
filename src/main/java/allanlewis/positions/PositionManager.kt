@@ -1,8 +1,8 @@
 package allanlewis.positions
 
 import allanlewis.PositionConfig
-import allanlewis.api.Order
 import allanlewis.api.Product
+import allanlewis.api.ReadOrder
 import allanlewis.api.RestApi
 import allanlewis.products.ProductRepository
 import org.slf4j.LoggerFactory
@@ -34,7 +34,7 @@ class PositionManager(private val productRepository: ProductRepository,
     private fun manage(product: Product, config: PositionConfig) {
         logger.info("Managing {}", product.id)
         Flux.interval(Duration.ofSeconds(intervalSeconds)).subscribe {
-            val orders = ArrayList<Order>()
+            val orders = ArrayList<ReadOrder>()
             restApi.getOrders().subscribe({orders.add(it)},
                 null,
                 {
@@ -68,11 +68,11 @@ class PositionManager(private val productRepository: ProductRepository,
         return Mono.just(position.id)
     }
 
-    fun getPosition(positionId: String): Mono<PositionJson> {
+    fun getPosition(positionId: String): Mono<PositionSummary> {
         return Mono.justOrEmpty(positions[positionId]).flatMap { it!!.json() }
     }
 
-    fun getPositions(): Flux<PositionJson> {
+    fun getPositions(): Flux<PositionSummary> {
         return Flux.fromIterable(positions.values).flatMap { it.json() }
     }
 

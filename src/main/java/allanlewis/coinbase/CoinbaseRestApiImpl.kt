@@ -27,7 +27,7 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
         return Mono.justOrEmpty(p)
     }
 
-    override fun getOrder(id: String): Mono<Order> {
+    override fun getOrder(id: String): Mono<ReadOrder> {
         val o = apiCall(authenticatedRequest("/orders/$id", "GET", "", CoinbaseUtilities.timestamp()),
             "getOrder",
                 object: TypeReference<CoinbaseOrder>() {},
@@ -36,7 +36,7 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
         return Mono.justOrEmpty(o)
     }
 
-    override fun getOrders(): Flux<Order> {
+    override fun getOrders(): Flux<ReadOrder> {
         val orders = apiCall(authenticatedRequest("/orders", "GET", "", CoinbaseUtilities.timestamp()),
                 "getOrders",
                 object: TypeReference<ArrayList<CoinbaseOrder>>() {})!!
@@ -44,7 +44,7 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
         return Flux.fromIterable(orders)
     }
 
-    override fun postOrder(order: Order): Mono<Order> {
+    override fun postOrder(order: WriteOrder): Mono<ReadOrder> {
         val body = ObjectMapper().writeValueAsString(order)
         val o =  apiCall(authenticatedRequest("/orders", "POST", body, CoinbaseUtilities.timestamp()),
             "postOrder",
