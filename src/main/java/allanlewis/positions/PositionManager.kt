@@ -5,7 +5,6 @@ import allanlewis.api.Order
 import allanlewis.api.Product
 import allanlewis.api.RestApi
 import allanlewis.products.ProductRepository
-import org.reactivestreams.Publisher
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -44,7 +43,7 @@ class PositionManager(private val productRepository: ProductRepository,
                     if (orderCount < config.max) {
                         logger.info("For {} order count is {} (max {}), considering opening a position", product.id, orderCount, config.max)
                         positionStrategyFactory.strategy(config.strategy)
-                            .openPosition(product.id!!)
+                            .openPosition(product.id)
                             .log()
                             .subscribe { b -> if (b) newPosition(product).log().subscribe() }
                     } else{
@@ -69,8 +68,12 @@ class PositionManager(private val productRepository: ProductRepository,
         return Mono.just(position.id)
     }
 
-    fun getPosition(transactionId: String?): Publisher<Position> {
-        return Mono.justOrEmpty(positions[transactionId])
+    fun getPosition(positionId: String): Mono<PositionJson> {
+        return Mono.justOrEmpty(positions[positionId]).flatMap { it!!.json() }
+    }
+
+    fun getPositions(): Flux<PositionJson> {
+        return Flux.fromIterable(positions.values).flatMap { it.json() }
     }
 
 }

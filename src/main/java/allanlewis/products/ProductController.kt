@@ -19,7 +19,7 @@ class ProductController(@Autowired private val productRepository: ProductReposit
     }
 
     @GetMapping(path = ["/{id}"])
-    operator fun get(@PathVariable id: String): Publisher<Product> {
+    fun get(@PathVariable id: String): Publisher<Product> {
         return Mono.from(productRepository.product(id))
     }
 

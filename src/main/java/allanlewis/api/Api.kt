@@ -41,26 +41,10 @@ class ApiException: Exception {
 
 interface Product {
 
-    var id: String?
-    var baseCurrency: String?
-    var quoteCurrency: String?
-    var baseMinSize: String?
-    var baseMaxSize: String?
-    var quoteIncrement: String?
-    var baseIncrement: String?
-    var displayName: String?
-    var minMarketFunds: String?
-    var maxMarketFunds: String?
-    var maxSlippagePercentage: String?
-    var marginEnabled: Boolean
-    var postOnly: Boolean
-    var limitOnly: Boolean
-    var cancelOnly: Boolean
-    var fxStableCoin: Boolean
-    var tradingDisabled: Boolean
-    var status: String?
-    var statusMessage: String?
-    var auctionMode: Boolean
+    val id: String
+    val quoteIncrement: String
+    val baseIncrement: String
+
 }
 
 interface Order {

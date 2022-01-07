@@ -6,73 +6,26 @@ import allanlewis.api.*
 import allanlewis.utility.ToStringBuilder
 import com.fasterxml.jackson.annotation.JsonProperty
 
-class CoinbaseProduct: Product {
-
-    @JsonProperty(value = "id")
-    override var id: String? = null
-
-    @JsonProperty(value = "base_currency")
-    override var baseCurrency: String? = null
-
-    @JsonProperty(value = "quote_currency")
-    override var quoteCurrency: String? = null
-
-    @JsonProperty(value = "base_min_size")
-    override var baseMinSize: String? = null
-
-    @JsonProperty(value = "base_max_size")
-    override var baseMaxSize: String? = null
-
-    @JsonProperty(value = "quote_increment")
-    override var quoteIncrement: String? = null
-
-    @JsonProperty(value = "base_increment")
-    override var baseIncrement: String? = null
-
-    @JsonProperty(value = "display_name")
-    override var displayName: String? = null
-
-    @JsonProperty(value = "min_market_funds")
-    override var minMarketFunds: String? = null
-
-    @JsonProperty(value = "max_market_funds")
-    override var maxMarketFunds: String? = null
-
-    @JsonProperty(value = "max_slippage_percentage")
-    override var maxSlippagePercentage: String? = null
-
-    @JsonProperty(value = "margin_enabled")
-    override var marginEnabled = false
-
-    @JsonProperty(value = "post_only")
-    override var postOnly = false
-
-    @JsonProperty(value = "limit_only")
-    override var limitOnly = false
-
-    @JsonProperty(value = "cancel_only")
-    override var cancelOnly = false
-
-    @JsonProperty(value = "fx_stablecoin")
-    override var fxStableCoin = false
-
-    @JsonProperty(value = "trading_disabled")
-    override var tradingDisabled = false
-
-    @JsonProperty(value = "status")
-    override var status: String? = null
-
-    @JsonProperty(value = "status_message")
-    override var statusMessage: String? = null
-
-    @JsonProperty(value = "auction_mode")
-    override var auctionMode = false
-
-    override fun toString(): String {
-        return ToStringBuilder.toString(this)
-    }
-
-}
+data class CoinbaseProduct(@JsonProperty("id") override val id: String,
+                           @JsonProperty("quote_increment") override val quoteIncrement: String,
+                           @JsonProperty("base_increment") override val baseIncrement: String,
+                           @JsonProperty("base_currency") val baseCurrency: String,
+                           @JsonProperty("quote_currency") val quoteCurrency: String,
+                           @JsonProperty("base_min_size") val baseMinSize: String,
+                           @JsonProperty("base_max_size") val baseMaxSize: String,
+                           @JsonProperty("display_name") val displayName: String,
+                           @JsonProperty("min_market_funds") val minMarketFunds: String,
+                           @JsonProperty("max_market_funds") val maxMarketFunds: String,
+                           @JsonProperty("max_slippage_percentage") val maxSlippagePercentage: String,
+                           @JsonProperty("margin_enabled") val marginEnabled: Boolean,
+                           @JsonProperty("post_only") val postOnly: Boolean,
+                           @JsonProperty("limit_only") val limitOnly: Boolean,
+                           @JsonProperty("cancel_only") val cancelOnly: Boolean,
+                           @JsonProperty("fx_stablecoin") val fxStablecoin: Boolean,
+                           @JsonProperty("trading_disabled") val tradingDisabled: Boolean,
+                           @JsonProperty("status") val status: String,
+                           @JsonProperty("status_message") val statusMessage: String,
+                           @JsonProperty("auction_mode") val auctionMode: Boolean): Product
 
 class CoinbaseOrder: Order {
 

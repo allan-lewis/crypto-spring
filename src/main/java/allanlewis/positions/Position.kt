@@ -4,7 +4,7 @@ import allanlewis.PositionConfig
 import allanlewis.api.Order
 import allanlewis.api.OrderFactory
 import allanlewis.api.Product
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 import java.math.BigDecimal
@@ -22,17 +22,13 @@ class Position(private val positionConfig: PositionConfig,
 
     private val logger = LoggerFactory.getLogger(javaClass)
     private val stateChanges = ArrayList<PositionStateChange>()
+    private val mapper = ObjectMapper()
 
     private var state = PositionState.New
+    private var buyOrder: Order? = null
+    private var sellOrder: Order? = null
 
     val id = UUID.randomUUID().toString()
-
-    @JsonProperty("buyOrder")
-    var buyOrder: Order?  = null
-        private set
-    @JsonProperty("sellOrder")
-    var sellOrder: Order? = null
-        private set
 
     fun init(): Position {
         changeState(PositionState.Started)
@@ -128,21 +124,23 @@ class Position(private val positionConfig: PositionConfig,
     private fun changeState(newState: PositionState) {
         val oldState = this.state
         this.state = newState
-        stateChanges.add(PositionStateChange(oldState, newState))
+
+        stateChanges.add(PositionStateChange(oldState,
+            newState,
+            ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_DATE_TIME)))
     }
 
-    @JsonProperty("stateChanges")
-    fun stateChanges(): List<PositionStateChange> {
-        return Collections.unmodifiableList(stateChanges)
+    fun json(): Mono<PositionJson> {
+        val buy = mapper.readValue(mapper.writeValueAsString(buyOrder), Order::class.java)
+        val sell = mapper.readValue(mapper.writeValueAsString(sellOrder), Order::class.java)
+        val changes = stateChanges.map { it.copy() }.toTypedArray()
+
+        return Mono.just(PositionJson(this.id, this.state, buy, sell, changes))
     }
 
 }
 
-class PositionStateChange(val oldState: PositionState, val newState: PositionState) {
-
-    val timestamp: String = ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_DATE_TIME)
-
-}
+data class PositionStateChange(val oldState: PositionState, val newState: PositionState, val timestamp: String)
 
 enum class PositionState {
 
@@ -159,6 +157,12 @@ enum class PositionState {
     SellOrderFailed
 
 }
+
+data class PositionJson(val id: String,
+                        val state: PositionState,
+                        val buy: Order?,
+                        val sell: Order?,
+                        val changes: Array<PositionStateChange>)
 
 interface PositionFactory {
 
