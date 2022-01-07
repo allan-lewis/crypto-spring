@@ -66,11 +66,11 @@ class Position(private val positionConfig: PositionConfig,
         order.funds = positionConfig.funds
         order.clientId = "B" + this.id
 
-        return buy.init(order)!!.mono
+        return buy.execute(order)
     }
 
     private fun sellPosition() {
-        sell(buy.order().filledSize).log().subscribe({ order ->
+        sell(buyOrder!!.filledSize!!).log().subscribe({ order ->
             changeState(order,
                 PositionState.SellOrderOpen,
                 PositionState.SellOrderFilled,
@@ -82,7 +82,7 @@ class Position(private val positionConfig: PositionConfig,
         }) { changeState(PositionState.SellOrderFailed) }
     }
 
-    private fun sell(boughtSize: String?): Mono<Order> {
+    private fun sell(boughtSize: String): Mono<Order> {
         changeState(PositionState.SellOrderPending)
 
         val fee = BigDecimal.ONE.add(BigDecimal(positionConfig.fee))
@@ -105,7 +105,7 @@ class Position(private val positionConfig: PositionConfig,
         order.price = price.toPlainString()
         order.clientId = "S" + this.id
 
-        return sell.init(order)!!.mono
+        return sell.execute(order)
     }
 
     private fun changeState(order: Order,
@@ -118,7 +118,7 @@ class Position(private val positionConfig: PositionConfig,
             changeState(openState)
         } else if ("done" == order.status && "filled" == order.doneReason) {
             changeState(filledState)
-        } else if ("done" == order.status && "canceled".equals(order.doneReason)) {
+        } else if ("done" == order.status && "canceled" == order.doneReason) {
             changeState(cancelledState)
         } else {
             changeState(defaultState)
