@@ -20,7 +20,7 @@ class PositionManager(private val productRepository: ProductRepository,
 
     private val logger = LoggerFactory.getLogger(javaClass)
     private val positions = ConcurrentHashMap<String, Position>()
-    private val intervalSeconds = 10L
+    private val intervalSeconds = 60L
 
     fun init(): PositionManager {
         for (pc in positionConfigs) {

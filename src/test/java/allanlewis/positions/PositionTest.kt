@@ -48,7 +48,7 @@ class PositionTest(@Mock private val product: Product,
     }
 
     @Test
-    fun happyPath() {
+    fun happyPathPositionInit() {
         Mockito.`when`(restApi.getOrder("1")).thenReturn(Mono.just(marketOrderDone))
         Mockito.`when`(restApi.getOrder("2")).thenReturn(Mono.just(limitOrderOpen))
 
@@ -59,6 +59,15 @@ class PositionTest(@Mock private val product: Product,
             .expectNext(PositionState.SellOrderPending)
             .expectNext(PositionState.SellOrderOpen)
             .verifyComplete()
+    }
+
+    @Test
+    fun happyPathOrderDone() {
+        Mockito.`when`(restApi.getOrder("1")).thenReturn(Mono.just(marketOrderDone))
+
+        val exec = OrderDone(restApi)
+
+        StepVerifier.create(exec.execute(marketOrder)).expectNext(marketOrderDone).verifyComplete()
     }
 
 }

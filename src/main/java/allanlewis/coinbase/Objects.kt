@@ -92,14 +92,15 @@ private class CoinbaseAccountDeserializer: StdDeserializer<CoinbaseAccount>(Coin
         val node: JsonNode = parser!!.codec.readTree(parser)
 
         val id = node.get("id").asText()
-        val currency = node.get("quote_increment").asText()
-        val balance = node.get("base_increment").asText()
+        val currency = node.get("currency").asText()
+        val balance = node.get("balance").asText()
 
         return CoinbaseAccount(id, currency, balance)
     }
 
 }
 
+@Suppress("unused")
 data class SubscriptionMessage(@JsonProperty("signature") val signature: String,
                                @JsonProperty("key") val key: String,
                                @JsonProperty("passphrase") val passphrase: String,
