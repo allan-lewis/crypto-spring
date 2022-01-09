@@ -73,12 +73,11 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
         val timestamp = timestamp()
         val signature = sign(config.secret, "/users/self/verify", "GET", "", timestamp)
 
-        val message = SubscriptionMessage ()
-        message.signature = signature
-        message.key = config.key
-        message.passphrase = config.passphrase
-        message.timestamp = timestamp
-        message.productIds = ids.toTypedArray()
+        val message = SubscriptionMessage (signature,
+            config.key,
+            config.passphrase,
+            timestamp,
+            ids.toTypedArray())
 
         return jacksonObjectMapper().writeValueAsString(message)
     }

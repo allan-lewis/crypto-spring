@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package allanlewis.coinbase
 
 import allanlewis.api.*
@@ -87,6 +85,7 @@ private class CoinbaseProductDeserializer: StdDeserializer<CoinbaseProduct>(Coin
     }
 
 }
+
 private class CoinbaseAccountDeserializer: StdDeserializer<CoinbaseAccount>(CoinbaseProduct::class.java) {
 
     override fun deserialize(parser: JsonParser?, context: DeserializationContext?): CoinbaseAccount {
@@ -101,22 +100,11 @@ private class CoinbaseAccountDeserializer: StdDeserializer<CoinbaseAccount>(Coin
 
 }
 
-class SubscriptionMessage {
-
-    @JsonProperty("signature")
-    lateinit var signature: String
-
-    @JsonProperty("key")
-    lateinit var key: String
-
-    @JsonProperty("passphrase")
-    lateinit var passphrase: String
-
-    @JsonProperty("timestamp")
-    lateinit var timestamp: String
-
-    @JsonProperty("product_ids")
-    lateinit var productIds: Array<String>
+data class SubscriptionMessage(@JsonProperty("signature") val signature: String,
+                               @JsonProperty("key") val key: String,
+                               @JsonProperty("passphrase") val passphrase: String,
+                               @JsonProperty("timestamp") val timestamp: String,
+                               @JsonProperty("product_ids") val productIds: Array<String>) {
 
     @JsonProperty("type")
     val type = "subscribe"
@@ -126,125 +114,46 @@ class SubscriptionMessage {
 
 }
 
-class CoinbasePriceTick(override var price: String,
-                        override var productId: String,
-                        override var time: String,
-                        override var twentyFourHourOpen: String,
-                        override var twentyFourHourVolume: String,
-                        override var twentyFourHourHigh: String,
-                        override var twentyFourHourLow: String) : PriceTick {
+data class CoinbasePriceTick(override val price: String,
+                             override val productId: String,
+                             override val time: String,
+                             override val twentyFourHourOpen: String,
+                             override val twentyFourHourVolume: String,
+                             override val twentyFourHourHigh: String,
+                             override val twentyFourHourLow: String) : PriceTick
 
-}
+@JsonDeserialize(using = CoinbaseWebSocketMessageDeserializer::class)
+data class CoinbaseWebSocketMessage(val type: String,
+                                    val productId: String,
+                                    val time: String,
+                                    val price: String,
+                                    val twentyFourHourOpen: String,
+                                    val twentyFourHourVolume: String,
+                                    val twentyFourHourHigh: String,
+                                    val twentyFourHourLow: String)
 
-class CoinbaseWebSocketMessage {
+private class CoinbaseWebSocketMessageDeserializer: StdDeserializer<CoinbaseWebSocketMessage>(CoinbaseWebSocketMessage::class.java) {
 
-    @JsonProperty("type")
-    lateinit var type: String
+    override fun deserialize(parser: JsonParser?, context: DeserializationContext?): CoinbaseWebSocketMessage {
+        val node: JsonNode = parser!!.codec.readTree(parser)
 
-    @JsonProperty("channels")
-    lateinit var channels: Array<Channel>
+        val type = node.get("type").asText()
+        val productId = if (node.get("product_id") == null) "" else node.get("product_id").asText()
+        val time = if (node.get("time") == null) "" else node.get("time").asText()
+        val price = if (node.get("price") == null) "" else node.get("price").asText()
+        val twentyFourHourOpen = if (node.get("open_24h") == null) "" else node.get("open_24h").asText()
+        val twentyFourHourVolume = if (node.get("volume_24h") == null) "" else node.get("volume_24h").asText()
+        val twentyFourHourHigh = if (node.get("high_24h") == null) "" else node.get("high_24h").asText()
+        val twentyFourHourLow = if (node.get("low_24h") == null) "" else node.get("low_24h").asText()
 
-    @JsonProperty("sequence")
-    var sequence: Long = 0
-
-    @JsonProperty("product_id")
-    lateinit var productId: String
-
-    @JsonProperty("price")
-    lateinit var price: String
-
-    @JsonProperty("open_24h")
-    lateinit var twentyFourHourOpen: String
-
-    @JsonProperty("volume_24h")
-    lateinit var twentyFourHourVolume: String
-
-    @JsonProperty("high_24h")
-    lateinit var twentyFourHourHigh: String
-
-    @JsonProperty("low_24h")
-    lateinit var twentyFourHourLow: String
-
-    @JsonProperty("volume_30d")
-    lateinit var thirtyDayVolume: String
-
-    @JsonProperty("best_bid")
-    lateinit var bestBid: String
-
-    @JsonProperty("best_ask")
-    lateinit var bestAsk: String
-
-    @JsonProperty("side")
-    lateinit var side: String
-
-    @JsonProperty("time")
-    lateinit var time: String
-
-    @JsonProperty("trade_id")
-    var tradeId: Long = 0
-
-    @JsonProperty("last_size")
-    lateinit var lastSize: String
-
-    @JsonProperty("last_trade_id")
-    var lastTradeId: Long = 0
-
-    @JsonProperty("order_id")
-    lateinit var orderId: String
-
-    @JsonProperty("order_type")
-    lateinit var orderType: String
-
-    @JsonProperty("funds")
-    lateinit var funds: String
-
-    @JsonProperty("client_oid")
-    lateinit var clientId: String
-
-    @JsonProperty("profile_id")
-    lateinit var profileId: String
-
-    @JsonProperty("user_id")
-    lateinit var userId: String
-
-    @JsonProperty("reason")
-    lateinit var reason: String
-
-    @JsonProperty("maker_order_id")
-    lateinit var makerOrderId: String
-
-    @JsonProperty("remaining_size")
-    lateinit var remainingSize: String
-
-    @JsonProperty("taker_order_id")
-    lateinit var takerOrderId: String
-
-    @JsonProperty("taker_profile_id")
-    lateinit var takerProfileId: String
-
-    @JsonProperty("taker_user_id")
-    lateinit var takerUserId: String
-
-    @JsonProperty("taker_fee_rate")
-    lateinit var takerFeeRate: String
-
-    @JsonProperty("size")
-    lateinit var size: String
-
-    @JsonProperty("old_funds")
-    lateinit var oldFunds: String
-
-    @JsonProperty("new_funds")
-    lateinit var newFunds: String
-
-}
-
-class Channel {
-
-    @JsonProperty("name")
-    lateinit var type: String
-
-    @JsonProperty("product_ids")
-    lateinit var productIds: Array<String>
+        return CoinbaseWebSocketMessage(type,
+            productId,
+            time,
+            price,
+            twentyFourHourOpen,
+            twentyFourHourVolume,
+            twentyFourHourHigh,
+            twentyFourHourLow)
+    }
 
 }

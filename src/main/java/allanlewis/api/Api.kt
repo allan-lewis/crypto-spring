@@ -104,12 +104,12 @@ interface WebSocketApi {
 
 interface PriceTick {
 
-    var price: String
-    var productId: String
-    var time: String
-    var twentyFourHourOpen: String
-    var twentyFourHourVolume: String
-    var twentyFourHourHigh: String
-    var twentyFourHourLow: String
+    val price: String
+    val productId: String
+    val time: String
+    val twentyFourHourOpen: String
+    val twentyFourHourVolume: String
+    val twentyFourHourHigh: String
+    val twentyFourHourLow: String
 
 }
