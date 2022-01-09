@@ -4,6 +4,7 @@ import allanlewis.PositionConfig
 import allanlewis.api.PriceTick
 import allanlewis.api.RestApi
 import allanlewis.api.WebSocketApi
+import allanlewis.products.ProductRepository
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 import reactor.tuple.Tuple2
@@ -70,7 +71,7 @@ abstract class AbstractCheckFundsStrategy : AbstractPositionStrategy() {
 }
 
 class DayRangeStrategy(private val positionConfigs: Array<PositionConfig>,
-                       private val accountId: String,
+                       private val productRepository: ProductRepository,
                        private val restApi: RestApi,
                        private val webSocketApi: WebSocketApi) : AbstractCheckFundsStrategy() {
 
@@ -116,11 +117,13 @@ class DayRangeStrategy(private val positionConfigs: Array<PositionConfig>,
             }
         }
 
-        return restApi.getAccount(accountId).map { account ->
-            logger.info("For currency {} have balance {} (min {})", account.currency, account.balance, min)
+        return productRepository.product(productId)
+            .flatMap { p -> restApi.getAccounts().filter { a -> a.currency == p.quoteCurrency }.next() }
+            .map { account ->
+                logger.info("For currency {} have balance {} (min {})", account.currency, account.balance, min)
 
-            BigDecimal(account.balance) > min
-        }
+                BigDecimal(account.balance) > min
+            }
     }
 
 }

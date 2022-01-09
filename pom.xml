@@ -18,9 +18,11 @@
     </parent>
 
     <properties>
+        <version.jackson>2.13.1</version.jackson>
         <version.kotlin>1.6.0</version.kotlin>
         <version.logback>1.2.10</version.logback>
         <version.reactor>1.0.1.RELEASE</version.reactor>
+        <version.reactor-test>3.4.13</version.reactor-test>
         <version.slf4j>1.7.32</version.slf4j>
         <version.sysout-over-slf4j>1.0.2</version.sysout-over-slf4j>
     </properties>
@@ -36,12 +38,30 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <!-- #### PROJECT REACTOR #### -->
         <dependency>
             <groupId>org.projectreactor</groupId>
             <artifactId>reactor-spring</artifactId>
             <version>${version.reactor}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <scope>test</scope>
+            <version>${version.reactor-test}</version>
+        </dependency>
+
+        <!-- #### JACKSON #### -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-kotlin</artifactId>
+            <version>${version.jackson}</version>
         </dependency>
 
         <!-- ### LOGGING ### -->

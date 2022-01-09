@@ -1,8 +1,8 @@
 package allanlewis.coinbase
 
 import allanlewis.api.*
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -17,67 +17,67 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
     private val logger = LoggerFactory.getLogger(javaClass)
     private val timeout = 10L
     private val client: HttpClient = HttpClient.newBuilder().connectTimeout(ofSeconds(timeout)).build()
+    private val mapper = jacksonObjectMapper()
 
     override fun getProduct(id: String): Mono<Product> {
-        val p =  apiCall(unauthenticatedGetRequest("/products/$id"),
+        return response(unauthenticatedGetRequest("/products/$id"),
             "getProduct",
-                object: TypeReference<CoinbaseProduct>() {},
-                arrayOf(404))
-
-        return Mono.justOrEmpty(p)
+                arrayOf(404)).map { s -> mapper.readValue<CoinbaseProduct>(s) }
     }
 
     override fun getOrder(id: String): Mono<ReadOrder> {
-        val o = apiCall(authenticatedRequest("/orders/$id", "GET", "", CoinbaseUtilities.timestamp()),
+        return response(authenticatedRequest("/orders/$id", "GET", "", CoinbaseUtilities.timestamp()),
             "getOrder",
-                object: TypeReference<CoinbaseOrder>() {},
-                arrayOf(404))
-
-        return Mono.justOrEmpty(o)
+                arrayOf(404)).map { s -> mapper.readValue<CoinbaseOrder>(s) }
     }
 
     override fun getOrders(): Flux<ReadOrder> {
-        val orders = apiCall(authenticatedRequest("/orders", "GET", "", CoinbaseUtilities.timestamp()),
-                "getOrders",
-                object: TypeReference<ArrayList<CoinbaseOrder>>() {})!!
-
-        return Flux.fromIterable(orders)
+        return response(authenticatedRequest("/orders", "GET", "", CoinbaseUtilities.timestamp()),
+                "getOrders", emptyArray())
+            .map { s -> mapper.readValue<List<CoinbaseOrder>>(s) }
+            .flatMapIterable { l -> l }
     }
 
     override fun postOrder(order: WriteOrder): Mono<ReadOrder> {
-        val body = ObjectMapper().writeValueAsString(order)
-        val o =  apiCall(authenticatedRequest("/orders", "POST", body, CoinbaseUtilities.timestamp()),
-            "postOrder",
-            object: TypeReference<CoinbaseOrder>() {})!!
+        val body = jacksonObjectMapper().writeValueAsString(order)
 
-        return Mono.just(o)
+        return response(authenticatedRequest("/orders", "POST", body, CoinbaseUtilities.timestamp()),
+            "postOrder",
+            emptyArray()).map { s -> mapper.readValue<CoinbaseOrder>(s) }
     }
 
     override fun getAccount(id: String): Mono<Account> {
-        val account = apiCall(authenticatedRequest("/accounts/$id", "GET", "", CoinbaseUtilities.timestamp()),
+        return response(authenticatedRequest("/accounts/$id", "GET", "", CoinbaseUtilities.timestamp()),
             "getAccount",
-            object: TypeReference<CoinbaseAccount>() {},
             arrayOf(404))
-
-        return Mono.justOrEmpty(account)
+            .map { s -> mapper.readValue<CoinbaseAccount>(s)}
     }
 
     override fun getAccounts(): Flux<Account> {
-        val accounts = apiCall(authenticatedRequest("/accounts", "GET", "", CoinbaseUtilities.timestamp()),
+        return response(authenticatedRequest("/accounts", "GET", "", CoinbaseUtilities.timestamp()),
             "getAccounts",
-            object: TypeReference<List<CoinbaseAccount>>() {},
-            arrayOf(404))
-
-        return Flux.fromIterable(accounts)
+            emptyArray())
+            .map { s -> mapper.readValue<List<CoinbaseAccount>>(s) }
+            .flatMapIterable { l -> l }
     }
 
-    private fun <T> apiCall(request: HttpRequest, logPrefix: String, valueType: TypeReference<T>): T? {
-        return apiCall(request, logPrefix, valueType, emptyArray())
-    }
-
-    private fun <T> apiCall(request: HttpRequest, logPrefix: String, valueType: TypeReference<T>, nullStatuses: Array<Int>): T? {
+    private fun response(request: HttpRequest, logPrefix: String, nullStatuses: Array<Int>): Mono<String> {
         return try {
-            send(request, logPrefix, valueType, nullStatuses)
+            val response = apiCall(request, logPrefix, nullStatuses)
+
+            return if (response != null) {
+                Mono.just(response)
+            } else {
+                Mono.empty()
+            }
+        } catch (ex: ApiException) {
+            Mono.error(ex)
+        }
+    }
+
+    private fun apiCall(request: HttpRequest, logPrefix: String, nullStatuses: Array<Int>): String? {
+        return try {
+            send(request, logPrefix, nullStatuses)
         } catch (ex: ApiException) {
             logger.error(logPrefix, ex)
             throw ex
@@ -87,7 +87,7 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
         }
     }
 
-    private fun <T> send(request: HttpRequest, logPrefix: String, valueType: TypeReference<T>, nullStatuses: Array<Int>): T? {
+    private fun send(request: HttpRequest, logPrefix: String, nullStatuses: Array<Int>): String? {
         logger.info("{} {}", logPrefix, request.uri())
 
         val response = client.send(request, BodyHandlers.ofString())
@@ -95,7 +95,7 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
         logger.info("{} {} {} {}", logPrefix, request.uri(), response.statusCode(), response.body())
 
         return if (response.statusCode() == 200) {
-            ObjectMapper().readValue(response.body(), valueType)
+            response.body()
         } else if (nullStatuses.indexOf(response.statusCode()) != -1) {
             null
         } else {
@@ -115,6 +115,7 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
             .timeout(ofSeconds(timeout)).build()
     }
 
+    @Suppress("UastIncorrectHttpHeaderInspection")
     private fun authenticatedRequest(path: String, method: String, body: String, timestamp: String): HttpRequest {
         logger.info("{} {} {}", path, method, body)
 

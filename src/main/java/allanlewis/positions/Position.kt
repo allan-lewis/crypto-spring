@@ -5,6 +5,8 @@ import allanlewis.api.OrderFactory
 import allanlewis.api.Product
 import allanlewis.api.ReadOrder
 import org.slf4j.LoggerFactory
+import reactor.core.publisher.Flux
+import reactor.core.publisher.FluxSink
 import reactor.core.publisher.Mono
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -12,6 +14,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
+import java.util.concurrent.atomic.AtomicReference
 
 class Position(private val positionConfig: PositionConfig,
                private val product: Product,
@@ -22,38 +25,42 @@ class Position(private val positionConfig: PositionConfig,
     private val logger = LoggerFactory.getLogger(javaClass)
     private val stateChanges = ArrayList<PositionStateChange>()
 
-    private var state = PositionState.New
+    private var state: PositionState? = null
     private var buyOrder: ReadOrder? = null
     private var sellOrder: ReadOrder? = null
 
     val id = UUID.randomUUID().toString()
 
-    fun init(): Position {
-        changeState(PositionState.Started)
-        buyPosition()
-        return this
+    private val sink = AtomicReference<FluxSink<PositionState>>()
+
+    fun init(): Flux<PositionState> {
+        return Flux.create { s ->
+            sink.set(s)
+
+            changeState(PositionState.Started)
+
+            buyPosition()
+        }
     }
 
     private fun buyPosition() {
-        buy().log().subscribe({ order ->
-            changeState(order,
+        changeState(PositionState.BuyOrderPending)
+
+        buy.execute(orderFactory.marketOrder(product.id, "buy", positionConfig.funds, "B" + this.id)).subscribe ({ o->
+            changeState(o,
                 null,
                 PositionState.BuyOrderFilled,
                 PositionState.BuyOrderCanceled,
                 PositionState.BuyOrderFailed
             )
-            buyOrder = order
-        }, { changeState(PositionState.BuyOrderFailed) }) {
+            buyOrder = o
+        }, {
+            changeState(PositionState.BuyOrderFailed)
+        }, {
             if (state === PositionState.BuyOrderFilled) {
                 sellPosition()
             }
-        }
-    }
-
-    private fun buy(): Mono<ReadOrder> {
-        changeState(PositionState.BuyOrderPending)
-
-        return buy.execute(orderFactory.marketOrder(product.id, "buy", positionConfig.funds, "B" + this.id))
+        })
     }
 
     private fun sellPosition() {
@@ -66,7 +73,9 @@ class Position(private val positionConfig: PositionConfig,
             )
 
             sellOrder = order
-        }) { changeState(PositionState.SellOrderFailed) }
+        }) {
+            changeState(PositionState.SellOrderFailed)
+        }
     }
 
     private fun sell(boughtSize: String): Mono<ReadOrder> {
@@ -112,6 +121,11 @@ class Position(private val positionConfig: PositionConfig,
         stateChanges.add(PositionStateChange(oldState,
             newState,
             ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_DATE_TIME)))
+
+        sink.get().next(newState)
+        if (terminalStates().contains(newState)) {
+            sink.get().complete()
+        }
     }
 
     fun json(): Mono<PositionSummary> {
@@ -120,19 +134,29 @@ class Position(private val positionConfig: PositionConfig,
         return Mono.just(PositionSummary(this.id, this.state, buyOrder, sellOrder, changes))
     }
 
+    fun terminalStates(): Array<PositionState> {
+        return arrayOf(
+            PositionState.BuyOrderFailed,
+            PositionState.BuyOrderCanceled,
+            PositionState.SellOrderOpen,
+            PositionState.SellOrderFilled,
+            PositionState.SellOrderCanceled,
+            PositionState.SellOrderFailed
+        )
+    }
+
 }
 
 data class PositionSummary(val id: String,
-                           val state: PositionState,
+                           val state: PositionState?,
                            val buy: ReadOrder?,
                            val sell: ReadOrder?,
                            val changes: Array<PositionStateChange>)
 
-data class PositionStateChange(val oldState: PositionState, val newState: PositionState, val timestamp: String)
+data class PositionStateChange(val oldState: PositionState?, val newState: PositionState, val timestamp: String)
 
 enum class PositionState {
 
-    New,
     Started,
     BuyOrderPending,
     BuyOrderFilled,
@@ -142,7 +166,7 @@ enum class PositionState {
     SellOrderOpen,
     SellOrderFilled,
     SellOrderCanceled,
-    SellOrderFailed
+    SellOrderFailed;
 
 }
 

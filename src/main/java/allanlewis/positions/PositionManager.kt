@@ -20,7 +20,7 @@ class PositionManager(private val productRepository: ProductRepository,
 
     private val logger = LoggerFactory.getLogger(javaClass)
     private val positions = ConcurrentHashMap<String, Position>()
-    private val intervalSeconds = 60L
+    private val intervalSeconds = 10L
 
     fun init(): PositionManager {
         for (pc in positionConfigs) {
@@ -62,10 +62,9 @@ class PositionManager(private val productRepository: ProductRepository,
 
         logger.info("Opening a new position for {}  {}", product.id, position.id)
 
-        position.init()
         positions[position.id] = position
 
-        return Mono.just(position.id)
+        return position.init().next().map { position.id }
     }
 
     fun getPosition(positionId: String): Mono<PositionSummary> {

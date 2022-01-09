@@ -4,13 +4,6 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import kotlin.jvm.Throws
 
-interface WebSocketApi {
-
-    @Throws(ApiException::class)
-    fun ticks(): Flux<PriceTick>
-
-}
-
 interface RestApi {
 
     @Throws(ApiException::class)
@@ -39,11 +32,21 @@ class ApiException: Exception {
     constructor(message: String, cause: Throwable): super(message, cause)
 }
 
+interface Account {
+
+    val id: String
+    val currency: String
+    val balance: String
+
+}
+
 interface Product {
 
     val id: String
     val quoteIncrement: String
     val baseIncrement: String
+    val baseCurrency: String
+    val quoteCurrency: String
 
 }
 
@@ -52,8 +55,6 @@ interface BaseOrder {
     val type: String
     val side: String
     val productId: String
-    val profileId: String
-    val clientId: String
 
 }
 
@@ -67,6 +68,9 @@ interface ReadOrder: BaseOrder {
 }
 
 interface WriteOrder: BaseOrder {
+
+    val profileId: String
+    val clientId: String
 
 }
 
@@ -83,6 +87,21 @@ interface LimitOrder : WriteOrder {
 
 }
 
+interface OrderFactory {
+
+    fun marketOrder(productId: String, side: String, funds: String, clientId: String): MarketOrder
+
+    fun limitOrder(productId: String, side: String, price: String, size: String, clientId: String): LimitOrder
+
+}
+
+interface WebSocketApi {
+
+    @Throws(ApiException::class)
+    fun ticks(): Flux<PriceTick>
+
+}
+
 interface PriceTick {
 
     var price: String
@@ -92,21 +111,5 @@ interface PriceTick {
     var twentyFourHourVolume: String
     var twentyFourHourHigh: String
     var twentyFourHourLow: String
-
-}
-
-interface Account {
-
-    var id: String?
-    var currency: String?
-    var balance: String?
-
-}
-
-interface OrderFactory {
-
-    fun marketOrder(productId: String, side: String, funds: String, clientId: String): MarketOrder
-
-    fun limitOrder(productId: String, side: String, price: String, size: String, clientId: String): LimitOrder
 
 }

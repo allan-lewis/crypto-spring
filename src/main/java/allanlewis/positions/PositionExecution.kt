@@ -13,17 +13,21 @@ abstract class AbstractPositionExecution(private val restApi: RestApi) {
 
     open fun execute(order: WriteOrder): Mono<ReadOrder> {
         return restApi.postOrder(order)
-            .flatMap{ o -> checkDone(o.id).retryWhen(Retry.backoff(10, Duration.ofMillis(100))) }
+            .flatMap{ o -> checkDone(o.id).retryWhen(Retry.backoff(5, Duration.ofMillis(100))) }
     }
 
     private fun checkDone(orderId: String): Mono<ReadOrder> {
         logger.info("Checking if done {}", orderId)
 
-        return restApi.getOrder(orderId).flatMap { o ->
-            logger.info("Result of check {}", o)
+        return restApi.getOrder(orderId)
+            .switchIfEmpty(Mono.error(IllegalStateException("Order not found")))
+            .flatMap { o ->
+                val done = done(o)
 
-            if (done(o)) Mono.just(o) else Mono.error(IllegalStateException("Order not done yet"))
-        }.switchIfEmpty(Mono.error(IllegalStateException("Order not found")))
+                logger.info("Result of check {} {}",done, o)
+
+                if (done) Mono.just(o) else Mono.error(IllegalStateException("Order not done yet"))
+            }
     }
 
     abstract fun done(order: ReadOrder): Boolean

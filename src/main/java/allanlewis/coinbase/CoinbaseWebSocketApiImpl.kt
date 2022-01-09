@@ -5,7 +5,7 @@ import allanlewis.api.WebSocketApi
 import allanlewis.coinbase.CoinbaseUtilities.sign
 import allanlewis.coinbase.CoinbaseUtilities.timestamp
 import allanlewis.products.ProductRepository
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.slf4j.LoggerFactory
 import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.WebSocketHandler
@@ -47,7 +47,7 @@ class CoinbaseWebSocketApiImpl(private val config: CoinbaseConfigurationData,
 class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
                                private val productRepository: ProductRepository) : WebSocketHandler {
 
-    private val mapper = ObjectMapper()
+    private val mapper = jacksonObjectMapper()
     private val ticks = ConcurrentHashMap<String, PriceTick>()
     private val logger = LoggerFactory.getLogger(javaClass)
     private val flux =  Flux.interval(Duration.ofMillis(500))
@@ -80,7 +80,7 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
         message.timestamp = timestamp
         message.productIds = ids.toTypedArray()
 
-        return ObjectMapper().writeValueAsString(message)
+        return jacksonObjectMapper().writeValueAsString(message)
     }
 
     private fun handleResponse(message: WebSocketMessage): CoinbaseWebSocketMessage {

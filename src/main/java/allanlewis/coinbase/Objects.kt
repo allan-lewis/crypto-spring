@@ -4,134 +4,102 @@ package allanlewis.coinbase
 
 import allanlewis.api.*
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer
 
+@JsonDeserialize(using = CoinbaseAccountDeserializer::class)
+data class CoinbaseAccount(@JsonProperty("id") override val id: String,
+                           @JsonProperty("currency") override val currency: String,
+                           @JsonProperty("balance") override val balance: String) : Account
+
+@JsonDeserialize(using = CoinbaseProductDeserializer::class)
 data class CoinbaseProduct(@JsonProperty("id") override val id: String,
                            @JsonProperty("quote_increment") override val quoteIncrement: String,
                            @JsonProperty("base_increment") override val baseIncrement: String,
-                           @JsonProperty("base_currency") val baseCurrency: String,
-                           @JsonProperty("quote_currency") val quoteCurrency: String,
-                           @JsonProperty("base_min_size") val baseMinSize: String,
-                           @JsonProperty("base_max_size") val baseMaxSize: String,
-                           @JsonProperty("display_name") val displayName: String,
-                           @JsonProperty("min_market_funds") val minMarketFunds: String,
-                           @JsonProperty("max_market_funds") val maxMarketFunds: String,
-                           @JsonProperty("max_slippage_percentage") val maxSlippagePercentage: String,
-                           @JsonProperty("margin_enabled") val marginEnabled: Boolean,
-                           @JsonProperty("post_only") val postOnly: Boolean,
-                           @JsonProperty("limit_only") val limitOnly: Boolean,
-                           @JsonProperty("cancel_only") val cancelOnly: Boolean,
-                           @JsonProperty("fx_stablecoin") val fxStablecoin: Boolean,
-                           @JsonProperty("trading_disabled") val tradingDisabled: Boolean,
-                           @JsonProperty("status") val status: String,
-                           @JsonProperty("status_message") val statusMessage: String,
-                           @JsonProperty("auction_mode") val auctionMode: Boolean): Product
+                           @JsonProperty("base_currency") override val baseCurrency: String,
+                           @JsonProperty("quote_currency") override val quoteCurrency: String,): Product
 
-abstract class CoinbaseBaseOrder(@JsonProperty("type") override val type: String,
-                                 @JsonProperty("side") override val side: String,
-                                 @JsonProperty("product_id") override val productId: String,
-                                 @JsonProperty("profile_id") override val profileId: String,
-                                 @JsonProperty("client_id") override val clientId: String): BaseOrder
+abstract class CoinbaseBaseOrder(override val type: String,
+                                 override val side: String,
+                                 override val productId: String): BaseOrder
 
+@JsonDeserialize(using = CoinbaseOrderDeserializer::class)
 data class CoinbaseOrder(@JsonProperty("id") override val id: String,
                          @JsonProperty("status") override val status: String,
                          @JsonProperty("done_reason") override val doneReason: String,
                          @JsonProperty("filled_size") override val filledSize: String,
-                         override val type: String,
-                         override val side: String,
-                         override val productId: String,
-                         override val profileId: String,
-                         override val clientId: String) : CoinbaseBaseOrder(type, side, productId, profileId, clientId), ReadOrder
+                         @JsonProperty("type") override val type: String,
+                         @JsonProperty("side") override val side: String,
+                         @JsonProperty("product_id") override val productId: String) : CoinbaseBaseOrder(type, side, productId), ReadOrder
+
+abstract class CoinbaseWriteOrder(override val type: String,
+                                  override val side: String,
+                                  override val productId: String,
+                                  override val profileId: String,
+                                  override val clientId: String): CoinbaseBaseOrder(type, side, productId), WriteOrder
 
 data class CoinbaseMarketOrder(@JsonProperty("side") override val side: String,
                                @JsonProperty("funds") override val funds: String,
-                               override val productId: String,
-                               override val profileId: String,
-                               override val clientId: String): CoinbaseBaseOrder("market", side, productId, profileId, clientId), MarketOrder
+                               @JsonProperty("product_id") override val productId: String,
+                               @JsonProperty("profile_id") override val profileId: String,
+                               @JsonProperty("client_oid") override val clientId: String): CoinbaseWriteOrder("market", side, productId, profileId, clientId), MarketOrder
 
 data class CoinbaseLimitOrder(@JsonProperty("side") override val side: String,
                               @JsonProperty("price") override val price: String,
                               @JsonProperty("size") override val size: String,
-                              override val productId: String,
-                              override val profileId: String,
-                              override val clientId: String): CoinbaseBaseOrder("limit", side, productId, profileId, clientId), LimitOrder
+                              @JsonProperty("product_id") override val productId: String,
+                              @JsonProperty("profile_id") override val profileId: String,
+                              @JsonProperty("client_oid") override val clientId: String): CoinbaseWriteOrder("limit", side, productId, profileId, clientId), LimitOrder
 
-/*
-        order.productId = product.id
-        order.side = "buy"
-        order.type = "market"
-        order.funds = positionConfig.funds
-        order.clientId = "B" + this.id
- */
+private class CoinbaseOrderDeserializer: StdDeserializer<CoinbaseOrder>(CoinbaseOrder::class.java) {
 
-//{
+    override fun deserialize(parser: JsonParser?, context: DeserializationContext?): CoinbaseOrder {
+        val node: JsonNode = parser!!.codec.readTree(parser)
 
-//    @JsonProperty("id")
-//    override var id: String? = null
-//
-//    @JsonProperty("client_oid")
-//    override var clientId: String? = null
-//
-//    @JsonProperty("price")
-//    override var price: String? = null
-//
-//    @JsonProperty("size")
-//    override var size: String? = null
-//
-//    @JsonProperty("product_id")
-//    override var productId: String? = null
-//
-//    @JsonProperty("profile_id")
-//    override var profileId: String? = null
-//
-//    @JsonProperty("side")
-//    override var side: String? = null
-//
-//    @JsonProperty("type")
-//    override var type: String? = null
-//
-//    @JsonProperty("time_in_force")
-//    override var timeInForce: String? = null
-//
-//    @JsonProperty("post_only")
-//    override var postOnly = false
-//
-//    @JsonProperty("created_at")
-//    override var createdAt: String? = null
-//
-//    @JsonProperty("fill_fees")
-//    override var fillFees: String? = null
-//
-//    @JsonProperty("filled_size")
-//    override var filledSize: String? = null
-//
-//    @JsonProperty("executed_value")
-//    override var executedValue: String? = null
-//
-//    @JsonProperty("status")
-//    override var status: String? = null
-//
-//    @JsonProperty("settled")
-//    override var settled = false
-//
-//    @JsonProperty("stp")
-//    override var stop: String? = null
-//
-//    @JsonProperty("funds")
-//    override var funds: String? = null
-//
-//    @JsonProperty("specified_funds")
-//    override var specifiedFunds: String? = null
-//
-//    @JsonProperty("done_at")
-//    override var doneAt: String? = null
-//
-//    @JsonProperty("done_reason")
-//    override var doneReason: String? = null
-//
-//    override fun toString(): String {
-//        return ToStringBuilder.toString(this)
-//    }
-//}
+        val id = node.get("id").asText()
+        val status = node.get("status").asText()
+        val doneReason = if (node.get("done_reason") == null) "" else node.get("done_reason").asText()
+        val filledSize = if (node.get("filled_size") == null) "" else node.get("filled_size").asText()
+        val side = node.get("side").asText()
+        val type = node.get("type").asText()
+        val productId = node.get("product_id").asText()
+
+        return CoinbaseOrder(id, status, doneReason, filledSize, type, side, productId)
+    }
+
+}
+
+private class CoinbaseProductDeserializer: StdDeserializer<CoinbaseProduct>(CoinbaseProduct::class.java) {
+
+    override fun deserialize(parser: JsonParser?, context: DeserializationContext?): CoinbaseProduct {
+        val node: JsonNode = parser!!.codec.readTree(parser)
+
+        val id = node.get("id").asText()
+        val quoteIncrement = node.get("quote_increment").asText()
+        val baseIncrement = node.get("base_increment").asText()
+        val baseCurrency = node.get("base_currency").asText()
+        val quoteCurrency = node.get("quote_currency").asText()
+
+        return CoinbaseProduct(id, quoteIncrement, baseIncrement, baseCurrency, quoteCurrency)
+    }
+
+}
+private class CoinbaseAccountDeserializer: StdDeserializer<CoinbaseAccount>(CoinbaseProduct::class.java) {
+
+    override fun deserialize(parser: JsonParser?, context: DeserializationContext?): CoinbaseAccount {
+        val node: JsonNode = parser!!.codec.readTree(parser)
+
+        val id = node.get("id").asText()
+        val currency = node.get("quote_increment").asText()
+        val balance = node.get("base_increment").asText()
+
+        return CoinbaseAccount(id, currency, balance)
+    }
+
+}
 
 class SubscriptionMessage {
 
@@ -278,30 +246,5 @@ class Channel {
 
     @JsonProperty("product_ids")
     lateinit var productIds: Array<String>
-
-}
-
-class CoinbaseAccount : Account {
-
-    @JsonProperty("id")
-    override var id: String? = null
-
-    @JsonProperty("currency")
-    override var currency: String? = null
-
-    @JsonProperty("balance")
-    override var balance: String? = null
-
-    @JsonProperty("hold")
-    var hold: String? = null
-
-    @JsonProperty("available")
-    var available: String? = null
-
-    @JsonProperty("profile_id")
-    var profileId: String? = null
-
-    @JsonProperty("trading_enabled")
-    var tradingEnabled: Boolean = false
 
 }
