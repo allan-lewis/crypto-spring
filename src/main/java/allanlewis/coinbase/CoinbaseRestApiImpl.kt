@@ -56,14 +56,18 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
     override fun getAccounts(): Flux<Account> {
         return response(authenticatedRequest("/accounts", "GET", "", CoinbaseUtilities.timestamp()),
             "getAccounts",
-            emptyArray())
+            emptyArray(), false)
             .map { s -> mapper.readValue<List<CoinbaseAccount>>(s) }
             .flatMapIterable { l -> l }
     }
 
     private fun response(request: HttpRequest, logPrefix: String, nullStatuses: Array<Int>): Mono<String> {
+        return response(request, logPrefix, nullStatuses, true)
+    }
+
+    private fun response(request: HttpRequest, logPrefix: String, nullStatuses: Array<Int>, log: Boolean): Mono<String> {
         return try {
-            val response = apiCall(request, logPrefix, nullStatuses)
+            val response = apiCall(request, logPrefix, nullStatuses, log)
 
             return if (response != null) {
                 Mono.just(response)
@@ -75,9 +79,9 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
         }
     }
 
-    private fun apiCall(request: HttpRequest, logPrefix: String, nullStatuses: Array<Int>): String? {
+    private fun apiCall(request: HttpRequest, logPrefix: String, nullStatuses: Array<Int>, log: Boolean): String? {
         return try {
-            send(request, logPrefix, nullStatuses)
+            send(request, logPrefix, nullStatuses, log)
         } catch (ex: ApiException) {
             logger.error(logPrefix, ex)
             throw ex
@@ -87,12 +91,12 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
         }
     }
 
-    private fun send(request: HttpRequest, logPrefix: String, nullStatuses: Array<Int>): String? {
-        logger.info("{} {}", logPrefix, request.uri())
+    private fun send(request: HttpRequest, logPrefix: String, nullStatuses: Array<Int>, log: Boolean): String? {
+        if (log) logger.info("{} {}", logPrefix, request.uri())
 
         val response = client.send(request, BodyHandlers.ofString())
 
-        logger.info("{} {} {} {}", logPrefix, request.uri(), response.statusCode(), response.body())
+        if (log) logger.info("{} {} {} {}", logPrefix, request.uri(), response.statusCode(), response.body())
 
         return if (response.statusCode() == 200) {
             response.body()
