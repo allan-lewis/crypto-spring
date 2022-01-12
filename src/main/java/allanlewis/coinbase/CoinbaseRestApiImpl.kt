@@ -92,11 +92,15 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
     }
 
     private fun send(request: HttpRequest, logPrefix: String, nullStatuses: Array<Int>, log: Boolean): String? {
-        if (log) logger.info("{} {}", logPrefix, request.uri())
+        logger.info("{} {}", logPrefix, request.uri())
 
         val response = client.send(request, BodyHandlers.ofString())
 
-        if (log) logger.info("{} {} {} {}", logPrefix, request.uri(), response.statusCode(), response.body())
+        if (log) {
+            logger.info("{} {} {} {}", logPrefix, request.uri(), response.statusCode(), response.body())
+        } else {
+            logger.debug("{} {} {} {}", logPrefix, request.uri(), response.statusCode(), response.body())
+        }
 
         return if (response.statusCode() == 200) {
             response.body()
@@ -134,4 +138,5 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
             .header("cb-access-timestamp", timestamp)
             .timeout(ofSeconds(timeout)).build()
     }
+
 }
