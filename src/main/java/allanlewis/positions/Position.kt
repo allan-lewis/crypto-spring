@@ -90,7 +90,8 @@ class Position(private val positionConfig: PositionConfig,
         val size: BigDecimal = BigDecimal(boughtSize)
             .multiply(BigDecimal(positionConfig.sell))
             .setScale(BigDecimal(product.baseIncrement).scale(), RoundingMode.FLOOR)
-        val price = funds.divide(size, RoundingMode.HALF_UP).setScale(0, RoundingMode.CEILING)
+
+        val price = funds.divide(size, RoundingMode.HALF_UP).setScale(BigDecimal(product.baseIncrement).scale(), RoundingMode.CEILING)
 
         logger.info("Selling {} {} {} {} {}", boughtSize, fee, funds, size, price)
 
@@ -134,7 +135,7 @@ class Position(private val positionConfig: PositionConfig,
         return Mono.just(PositionSummary(this.id, this.state, buyOrder, sellOrder, changes))
     }
 
-    fun terminalStates(): Array<PositionState> {
+    private fun terminalStates(): Array<PositionState> {
         return arrayOf(
             PositionState.BuyOrderFailed,
             PositionState.BuyOrderCanceled,

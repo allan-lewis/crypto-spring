@@ -50,7 +50,10 @@ class AlwaysFalseStrategy : AbstractPositionStrategy() {
 
 }
 
-abstract class AbstractCheckFundsStrategy : AbstractPositionStrategy() {
+abstract class AbstractCheckFundsStrategy(private val positionConfigs: Array<PositionConfig>,
+                                          private val productRepository: ProductRepository,
+                                          private val restApi: RestApi,
+) : AbstractPositionStrategy() {
 
     override fun open(productId: String): Mono<Boolean> {
         return checkFunds(productId).flatMap { funds -> if (funds) {
@@ -64,16 +67,42 @@ abstract class AbstractCheckFundsStrategy : AbstractPositionStrategy() {
         }
     }
 
-    abstract fun checkFunds(productId: String): Mono<Boolean>
+    private fun checkFunds(productId: String): Mono<Boolean> {
+        var min = BigDecimal.ZERO
+        for (pc in positionConfigs) {
+            if (pc.id == productId) {
+                min = BigDecimal(pc.funds)
+            }
+        }
+
+        return productRepository.product(productId)
+            .flatMap { p -> restApi.getAccounts().filter { a -> a.currency == p.quoteCurrency }.next() }
+            .map { account ->
+                logger.info("For currency {} have balance {} (min {})", account.currency, account.balance, min)
+
+                BigDecimal(account.balance) > min
+            }
+    }
 
     abstract fun shouldOpen(productId: String): Mono<Boolean>
 
 }
 
-class DayRangeStrategy(private val positionConfigs: Array<PositionConfig>,
-                       private val productRepository: ProductRepository,
-                       private val restApi: RestApi,
-                       private val webSocketApi: WebSocketApi) : AbstractCheckFundsStrategy() {
+
+class AlwaysTrueWithFunds(positionConfigs: Array<PositionConfig>,
+                       productRepository: ProductRepository,
+                       restApi: RestApi) : AbstractCheckFundsStrategy(positionConfigs, productRepository, restApi) {
+
+    override fun shouldOpen(productId: String): Mono<Boolean> {
+        return Mono.just(true)
+    }
+
+}
+
+class DayRangeStrategy(positionConfigs: Array<PositionConfig>,
+                       productRepository: ProductRepository,
+                       restApi: RestApi,
+                       private val webSocketApi: WebSocketApi) : AbstractCheckFundsStrategy(positionConfigs, productRepository, restApi) {
 
     private val decisions = ConcurrentHashMap<String, Tuple2<Boolean, String>>()
 
@@ -107,23 +136,6 @@ class DayRangeStrategy(private val positionConfigs: Array<PositionConfig>,
         logger.info("Open position for $productId: ${decision.t1} ${decision.t2}")
 
         return Mono.just(decision.t1)
-    }
-
-    override fun checkFunds(productId: String): Mono<Boolean> {
-        var min = BigDecimal.ZERO
-        for (pc in positionConfigs) {
-            if (pc.id == productId) {
-                min = BigDecimal(pc.funds)
-            }
-        }
-
-        return productRepository.product(productId)
-            .flatMap { p -> restApi.getAccounts().filter { a -> a.currency == p.quoteCurrency }.next() }
-            .map { account ->
-                logger.info("For currency {} have balance {} (min {})", account.currency, account.balance, min)
-
-                BigDecimal(account.balance) > min
-            }
     }
 
 }

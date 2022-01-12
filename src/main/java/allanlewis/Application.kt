@@ -22,7 +22,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Scope
 import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J
 
-
 @SpringBootApplication
 open class Application : InitializingBean {
 
@@ -88,6 +87,11 @@ open class ApplicationConfiguration(private val configurationData: Configuration
     @Bean
     open fun dayRangeStrategy(): DayRangeStrategy {
         return DayRangeStrategy(configurationData.positionConfigs, productRepository(), restApi(), webSocketApi()).init()
+    }
+
+    @Bean
+    open fun alwaysTrueWithFunds(): AlwaysTrueWithFunds {
+        return AlwaysTrueWithFunds(configurationData.positionConfigs, productRepository(), restApi())
     }
 
     @Bean
