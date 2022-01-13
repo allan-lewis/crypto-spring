@@ -1,9 +1,29 @@
-package allanlewis.positions
+package allanlewis.spring
 
+import allanlewis.api.Product
+import allanlewis.positions.PositionManager
+import allanlewis.positions.PositionSummary
+import allanlewis.products.ProductRepository
 import org.reactivestreams.Publisher
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
+import reactor.core.publisher.Mono
 
+@RestController
+@RequestMapping("/products")
+class ProductController(@Autowired private val productRepository: ProductRepository) {
+
+    @GetMapping
+    fun get(): Publisher<Product> {
+        return productRepository.products()
+    }
+
+    @GetMapping(path = ["/{id}"])
+    fun get(@PathVariable id: String): Publisher<Product> {
+        return Mono.from(productRepository.product(id))
+    }
+
+}
 
 @RestController
 @RequestMapping(path = ["/positions"])
