@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import javax.websocket.ContainerProvider
 
-class CoinbaseWebSocketApiImpl(private val config: CoinbaseConfigurationData,
+class CoinbaseWebSocketApiImpl(private val config: CoinbaseWebSocketConfiguration,
                                private val webSocketHandler: CoinbaseWebSocketHandler): WebSocketApi {
 
     private val size = 2048000
@@ -43,7 +43,7 @@ class CoinbaseWebSocketApiImpl(private val config: CoinbaseConfigurationData,
 
 }
 
-class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData) : WebSocketHandler {
+class CoinbaseWebSocketHandler(private val config: CoinbaseWebSocketConfiguration) : WebSocketHandler {
 
     private val mapper = jacksonObjectMapper()
     private val ticks = ConcurrentHashMap<String, PriceTick>()
@@ -106,5 +106,11 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData) : 
                 message.twentyFourHourHigh,
                 message.twentyFourHourLow)
     }
+
+}
+
+interface CoinbaseWebSocketConfiguration : CoinbaseRestApiImpl.CoinbaseRestApiConfiguration {
+
+    val webSocketUrl: String
 
 }

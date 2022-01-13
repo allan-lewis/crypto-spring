@@ -1,7 +1,7 @@
 package allanlewis.products
 
-import allanlewis.PositionConfig
 import allanlewis.api.ApiException
+import allanlewis.api.PositionConfig
 import allanlewis.api.Product
 import allanlewis.api.RestApi
 import org.slf4j.LoggerFactory

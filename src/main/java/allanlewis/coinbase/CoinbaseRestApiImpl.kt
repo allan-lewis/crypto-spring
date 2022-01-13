@@ -12,7 +12,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse.*
 import java.time.Duration.ofSeconds
 
-class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestApi {
+class CoinbaseRestApiImpl(private val config: CoinbaseRestApiConfiguration) : RestApi {
 
     private val logger = LoggerFactory.getLogger(javaClass)
     private val timeout = 10L
@@ -137,6 +137,15 @@ class CoinbaseRestApiImpl(private val config: CoinbaseConfigurationData) : RestA
             .header("cb-access-sign", CoinbaseUtilities.sign(config.secret, path, method, body, timestamp))
             .header("cb-access-timestamp", timestamp)
             .timeout(ofSeconds(timeout)).build()
+    }
+
+    interface CoinbaseRestApiConfiguration {
+
+        val restUrl: String
+        val key: String
+        val passphrase: String
+        val secret: String
+
     }
 
 }

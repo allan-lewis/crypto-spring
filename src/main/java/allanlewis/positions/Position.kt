@@ -1,7 +1,7 @@
 package allanlewis.positions
 
-import allanlewis.PositionConfig
 import allanlewis.api.OrderFactory
+import allanlewis.api.PositionConfig
 import allanlewis.api.Product
 import allanlewis.api.ReadOrder
 import org.slf4j.LoggerFactory

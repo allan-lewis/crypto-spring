@@ -113,3 +113,10 @@ interface PriceTick {
     val twentyFourHourLow: String
 
 }
+
+data class PositionConfig(val id: String,
+                          val max: Int,
+                          val funds: String,
+                          val fee: String,
+                          val sell: String,
+                          val strategy: String)

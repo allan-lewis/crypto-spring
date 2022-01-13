@@ -1,6 +1,5 @@
 package allanlewis.positions
 
-import allanlewis.PositionConfig
 import allanlewis.api.*
 import allanlewis.coinbase.CoinbaseLimitOrder
 import allanlewis.coinbase.CoinbaseMarketOrder

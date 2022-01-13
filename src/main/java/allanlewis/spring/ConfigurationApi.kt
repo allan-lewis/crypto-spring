@@ -1,62 +1,20 @@
-package allanlewis
+package allanlewis.spring
 
 import allanlewis.api.*
-import allanlewis.coinbase.*
 import allanlewis.positions.*
 import allanlewis.products.ProductRepository
-import org.apache.commons.logging.Log
-import org.apache.commons.logging.LogFactory
-import org.apache.log4j.Logger
-import org.slf4j.LoggerFactory
-import org.slf4j.bridge.SLF4JBridgeHandler
-import org.springframework.beans.factory.InitializingBean
 import org.springframework.beans.factory.config.BeanDefinition
-import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.boot.context.properties.EnableConfigurationProperties
-import org.springframework.boot.runApplication
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Scope
-import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J
-
-@SpringBootApplication
-open class Application : InitializingBean {
-
-    private val logger = LoggerFactory.getLogger(Application::class.java)
-
-    override fun afterPropertiesSet() {
-        println("logged via system.out")
-        System.err.println("logged via system.err")
-
-        val julLogger = java.util.logging.Logger.getLogger(Application::class.java.name)
-        julLogger.info("logged via jul")
-
-        val log4JLogger: Logger = Logger.getLogger(Application::class.java)
-        log4JLogger.info("logged via log4j")
-
-        val jclLogger: Log = LogFactory.getLog(Application::class.java)
-        jclLogger.info("logged via jcl")
-
-        logger.info("logged via slf4j")
-    }
-
-}
-
-fun main(args: Array<String>) {
-
-    SysOutOverSLF4J.sendSystemOutAndErrToSLF4J()
-    SLF4JBridgeHandler.removeHandlersForRootLogger()
-    SLF4JBridgeHandler.install()
-
-    runApplication<Application>(*args)
-}
 
 @Configuration
-@Import(CoinbaseConfiguration::class)
+@Import(ConfigurationCoinbase::class)
 @EnableConfigurationProperties(ConfigurationData::class)
 open class ApplicationConfiguration(private val configurationData: ConfigurationData,
                                     private val applicationContext: ApplicationContext) {
@@ -150,12 +108,5 @@ open class ApplicationConfiguration(private val configurationData: Configuration
 }
 
 @ConstructorBinding
-@ConfigurationProperties(prefix = "crypto.config")
+@ConfigurationProperties(prefix = "api")
 data class ConfigurationData (val positionConfigs: Array<PositionConfig>)
-
-data class PositionConfig(val id: String,
-                          val max: Int,
-                          val funds: String,
-                          val fee: String,
-                          val sell: String,
-                          val strategy: String)

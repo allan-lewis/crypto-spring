@@ -1,6 +1,6 @@
 package allanlewis.positions
 
-import allanlewis.PositionConfig
+import allanlewis.api.PositionConfig
 import allanlewis.api.PriceTick
 import allanlewis.api.RestApi
 import allanlewis.api.WebSocketApi

@@ -1,6 +1,6 @@
 package allanlewis.positions
 
-import allanlewis.PositionConfig
+import allanlewis.api.PositionConfig
 import allanlewis.api.Product
 import allanlewis.api.ReadOrder
 import allanlewis.api.RestApi
