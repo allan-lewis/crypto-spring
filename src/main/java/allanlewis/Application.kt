@@ -19,6 +19,7 @@ import org.springframework.boot.runApplication
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Scope
 import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J
 
@@ -55,9 +56,9 @@ fun main(args: Array<String>) {
 }
 
 @Configuration
-@EnableConfigurationProperties(ConfigurationData::class, CoinbaseConfigurationData::class)
+@Import(CoinbaseConfiguration::class)
+@EnableConfigurationProperties(ConfigurationData::class)
 open class ApplicationConfiguration(private val configurationData: ConfigurationData,
-                                    private val coinbaseConfigurationData: CoinbaseConfigurationData,
                                     private val applicationContext: ApplicationContext) {
 
     @Bean
@@ -134,39 +135,16 @@ open class ApplicationConfiguration(private val configurationData: Configuration
         return OrderNotPending(restApi())
     }
 
-    @Bean
-    open fun restApi(): RestApi {
-        return CoinbaseRestApiImpl(coinbaseConfigurationData)
+    private fun restApi(): RestApi {
+        return applicationContext.getBean(RestApi::class.java)
     }
 
-    @Bean
-    open fun webSocketApi(): WebSocketApi {
-        return CoinbaseWebSocketApiImpl(coinbaseConfigurationData, webSocketHandler()).init()
+    private fun webSocketApi(): WebSocketApi {
+        return applicationContext.getBean(WebSocketApi::class.java)
     }
 
-    @Bean
-    open fun webSocketHandler(): CoinbaseWebSocketHandler {
-        return CoinbaseWebSocketHandler(coinbaseConfigurationData, productRepository())
-    }
-
-    @Bean
-    open fun orderFactory(): OrderFactory {
-
-        return object : OrderFactory {
-
-            override fun marketOrder(
-                productId: String,
-                side: String,
-                funds: String,
-                clientId: String): MarketOrder {
-                return CoinbaseMarketOrder(side, funds, productId, coinbaseConfigurationData.profileId, clientId)
-            }
-
-            override fun limitOrder(productId: String, side: String, price: String, size: String, clientId: String): LimitOrder {
-                return CoinbaseLimitOrder(side, price, size, productId, coinbaseConfigurationData.profileId, clientId)
-            }
-
-        }
+    private fun orderFactory(): OrderFactory {
+        return applicationContext.getBean(OrderFactory::class.java)
     }
 
 }

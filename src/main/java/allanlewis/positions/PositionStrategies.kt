@@ -100,14 +100,18 @@ class AlwaysTrueWithFunds(positionConfigs: Array<PositionConfig>,
 }
 
 class DayRangeStrategy(positionConfigs: Array<PositionConfig>,
-                       productRepository: ProductRepository,
+                       private val productRepository: ProductRepository,
                        restApi: RestApi,
                        private val webSocketApi: WebSocketApi) : AbstractCheckFundsStrategy(positionConfigs, productRepository, restApi) {
 
     private val decisions = ConcurrentHashMap<String, Tuple2<Boolean, String>>()
 
     fun init(): DayRangeStrategy {
-        webSocketApi.ticks().subscribe { tick -> decide(tick) }
+        productRepository.products()
+            .map { p -> p.id }.collectList()
+            .subscribe { list -> webSocketApi.ticks(list.toTypedArray())
+                .subscribe { pt -> decide(pt) }
+            }
 
         return this
     }

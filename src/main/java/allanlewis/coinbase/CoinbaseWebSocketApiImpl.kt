@@ -4,10 +4,8 @@ import allanlewis.api.PriceTick
 import allanlewis.api.WebSocketApi
 import allanlewis.coinbase.CoinbaseUtilities.sign
 import allanlewis.coinbase.CoinbaseUtilities.timestamp
-import allanlewis.products.ProductRepository
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.slf4j.LoggerFactory
-import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
@@ -17,6 +15,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.net.URI
 import java.time.Duration
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import javax.websocket.ContainerProvider
 
@@ -38,14 +37,13 @@ class CoinbaseWebSocketApiImpl(private val config: CoinbaseConfigurationData,
         return this
     }
 
-    override fun ticks(): Flux<PriceTick> {
-        return webSocketHandler.ticks()
+    override fun ticks(productIds: Array<String>): Flux<PriceTick> {
+        return webSocketHandler.subscribe(productIds)
     }
 
 }
 
-class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
-                               private val productRepository: ProductRepository) : WebSocketHandler {
+class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData) : WebSocketHandler {
 
     private val mapper = jacksonObjectMapper()
     private val ticks = ConcurrentHashMap<String, PriceTick>()
@@ -56,20 +54,24 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
         .flatMapIterable { ticks -> ticks }
         .share()
 
-    override fun handle(session: WebSocketSession): Mono<Void> {
-        val subscription = productRepository.products().map { p ->
-            logger.info("Subscribing for {}", p.id)
+    private val future = CompletableFuture<WebSocketSession>()
 
-            p.id
-        }.collectList().map { list -> subscriptionPayload(list) }
+    fun subscribe(productIds: Array<String>): Flux<PriceTick> {
+        return Mono.fromFuture(future)
+            .flatMapMany { s ->
+                logger.info("Subscribing for {}", productIds)
 
-        return session.send(subscription
-            .map(session::textMessage))
-            .and(session.receive().map { webSocketMessage -> handleResponse(webSocketMessage) }.log())
-            .and(session.closeStatus().map(CloseStatus::getCode).log())
+                s.send(Mono.just(s.textMessage(subscriptionPayload(productIds))))
+                .thenMany(flux) }
     }
 
-    private fun subscriptionPayload(ids: List<String>): String {
+    override fun handle(session: WebSocketSession): Mono<Void> {
+        future.complete(session)
+
+        return session.receive().map { webSocketMessage -> handleResponse(webSocketMessage) }.then()
+    }
+
+    private fun subscriptionPayload(ids: Array<String>): String {
         val timestamp = timestamp()
         val signature = sign(config.secret, "/users/self/verify", "GET", "", timestamp)
 
@@ -77,7 +79,8 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
             config.key,
             config.passphrase,
             timestamp,
-            ids.toTypedArray())
+            ids
+        )
 
         return jacksonObjectMapper().writeValueAsString(message)
     }
@@ -102,10 +105,6 @@ class CoinbaseWebSocketHandler(private val config: CoinbaseConfigurationData,
                 message.twentyFourHourVolume,
                 message.twentyFourHourHigh,
                 message.twentyFourHourLow)
-    }
-
-    fun ticks(): Flux<PriceTick> {
-        return flux
     }
 
 }

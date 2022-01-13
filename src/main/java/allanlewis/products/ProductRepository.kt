@@ -14,7 +14,6 @@ class ProductRepository(private val positionConfigs: Array<PositionConfig>, priv
     private val logger = LoggerFactory.getLogger(javaClass)
     private val products = ConcurrentHashMap<String, Mono<Product>>()
 
-    @Suppress("ReactiveStreamsUnusedPublisher")
     fun init(): ProductRepository {
         for (pc in positionConfigs) {
             logger.info("Loading {}", pc.id)

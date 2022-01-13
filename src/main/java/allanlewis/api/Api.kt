@@ -98,7 +98,7 @@ interface OrderFactory {
 interface WebSocketApi {
 
     @Throws(ApiException::class)
-    fun ticks(): Flux<PriceTick>
+    fun ticks(productIds: Array<String>): Flux<PriceTick>
 
 }
 
