@@ -120,3 +120,11 @@ data class PositionConfig(val id: String,
                           val fee: String,
                           val sell: String,
                           val strategy: String)
+
+interface WebSocketBridge {
+
+    fun send(): Flux<String>
+
+    fun receive(message: String)
+
+}

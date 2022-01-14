@@ -52,8 +52,7 @@ class AlwaysFalseStrategy : AbstractPositionStrategy() {
 
 abstract class AbstractCheckFundsStrategy(private val positionConfigs: Array<PositionConfig>,
                                           private val productRepository: ProductRepository,
-                                          private val restApi: RestApi,
-) : AbstractPositionStrategy() {
+                                          private val restApi: RestApi) : AbstractPositionStrategy() {
 
     override fun open(productId: String): Mono<Boolean> {
         return checkFunds(productId).flatMap { funds -> if (funds) {

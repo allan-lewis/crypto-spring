@@ -7,6 +7,7 @@ import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.web.reactive.socket.WebSocketHandler
 
 @Configuration
 @EnableConfigurationProperties(ConfigurationDataCoinbase::class)
@@ -18,13 +19,18 @@ open class ConfigurationCoinbase(private val configurationDataCoinbase: Configur
     }
 
     @Bean
-    open fun webSocketApi(): WebSocketApi {
-        return CoinbaseWebSocketApiImpl(configurationDataCoinbase, webSocketHandler()).init()
+    open fun webSocketApi(): CoinbaseWebSocketApiImpl {
+        return CoinbaseWebSocketApiImpl(configurationDataCoinbase)
     }
 
     @Bean
-    open fun webSocketHandler(): CoinbaseWebSocketHandler {
-        return CoinbaseWebSocketHandler(configurationDataCoinbase)
+    open fun webSocketHandler(): WebSocketHandler {
+        return DefaultWebSocketHandler(webSocketApi())
+    }
+
+    @Bean
+    open fun webSocketClient(): DefaultWebSocketClient {
+        return DefaultWebSocketClient(configurationDataCoinbase.webSocketUrl, webSocketHandler()).init()
     }
 
     @Bean
