@@ -34,17 +34,17 @@ open class ApplicationConfiguration(private val configurationData: Configuration
     }
 
     @Bean
-    open fun alwaysTrueStrategy(): AlwaysTrueStrategy {
+    open fun alwaysTrue(): AlwaysTrueStrategy {
         return AlwaysTrueStrategy()
     }
 
     @Bean
-    open fun alwaysFalseStrategy(): AlwaysFalseStrategy {
+    open fun alwaysFalse(): AlwaysFalseStrategy {
         return AlwaysFalseStrategy()
     }
 
     @Bean
-    open fun dayRangeStrategy(): DayRangeStrategy {
+    open fun dayRange(): DayRangeStrategy {
         return DayRangeStrategy(configurationData.positionConfigs, productRepository(), restApi(), webSocketApi()).init()
     }
 
