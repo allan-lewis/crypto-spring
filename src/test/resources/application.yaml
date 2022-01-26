@@ -1,0 +1,22 @@
+  api:
+    positionConfigs:
+      - id: BTC-USD
+        max: 1
+        funds: 10
+        fee: .005
+        sell: .99
+        strategy: alwaysTrueWithFunds
+      - id: ETH-USD
+        max: 1
+        funds: 10
+        fee: .005
+        sell: .99
+        strategy: alwaysTrueWithFunds
+
+  coinbase:
+    profileId: p-001
+    restUrl: https://null.coinbase.com
+    webSocketUrl: wss://null.coinbase.com
+    key: k-001
+    passphrase: password
+    secret: c2VjcmV0
