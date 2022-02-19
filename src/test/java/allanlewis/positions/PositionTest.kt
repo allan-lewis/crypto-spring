@@ -20,7 +20,7 @@ class PositionTest(@Mock private val product: Product,
 
     private val config = PositionConfig("BTC-USD", 1, "10", ".005", ".99", "alwaysTrueStrategy")
 
-    private val position = Position(config, product, OrderDone(restApi), OrderNotPending(restApi), orderFactory)
+    private val position = Position(config, product, OrderDone(restApi, 3), OrderNotPending(restApi, 3), orderFactory)
 
     private val marketOrder = CoinbaseMarketOrder("buy", "10", "BTC-USD", "", "")
     private val marketOrderPending = CoinbaseOrder("1", "pending", "", "", "market", "buy", "BTC-USD")
@@ -64,7 +64,7 @@ class PositionTest(@Mock private val product: Product,
     fun happyPathOrderDone() {
         Mockito.`when`(restApi.getOrder("1")).thenReturn(Mono.just(marketOrderDone))
 
-        val exec = OrderDone(restApi)
+        val exec = OrderDone(restApi, 3)
 
         StepVerifier.create(exec.execute(marketOrder)).expectNext(marketOrderDone).verifyComplete()
     }
