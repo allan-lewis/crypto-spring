@@ -84,13 +84,13 @@ open class ApplicationConfiguration(private val configurationData: Configuration
     @Bean
     @Scope(BeanDefinition.SCOPE_PROTOTYPE)
     open fun orderDone(): OrderDone? {
-        return OrderDone(restApi())
+        return OrderDone(restApi(), 10)
     }
 
     @Bean
     @Scope(BeanDefinition.SCOPE_PROTOTYPE)
     open fun orderNotPending(): OrderNotPending? {
-        return OrderNotPending(restApi())
+        return OrderNotPending(restApi(), 10)
     }
 
     private fun restApi(): RestApi {
