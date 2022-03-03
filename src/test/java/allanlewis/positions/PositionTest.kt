@@ -26,7 +26,7 @@ class PositionTest(@Mock private val product: Product,
     private val marketOrderPending = CoinbaseOrder("1", "pending", "", "", "market", "buy", "BTC-USD")
     private val marketOrderDone = CoinbaseOrder("1", "done", "filled", "10", "market", "buy", "BTC-USD")
 
-    private val limitOrder = CoinbaseLimitOrder("buy", "10", "10", "BTC-USD", "", "")
+    private val limitOrder = CoinbaseLimitOrder("buy", "10", "10", "BTC-USD", "", "", true)
     private val limitOrderPending = CoinbaseOrder("2", "pending", "", "", "limit", "buy", "BTC-USD")
     private val limitOrderOpen = CoinbaseOrder("2", "open", "", "", "limit", "buy", "BTC-USD")
 

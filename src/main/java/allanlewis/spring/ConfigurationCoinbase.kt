@@ -43,7 +43,7 @@ open class ConfigurationCoinbase(private val configurationDataCoinbase: Configur
             }
 
             override fun limitOrder(productId: String, side: String, price: String, size: String, clientId: String): LimitOrder {
-                return CoinbaseLimitOrder(side, price, size, productId, configurationDataCoinbase.profileId, clientId)
+                return CoinbaseLimitOrder(side, price, size, productId, configurationDataCoinbase.profileId, clientId, true)
             }
 
         }

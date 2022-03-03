@@ -50,7 +50,8 @@ data class CoinbaseLimitOrder(@JsonProperty("side") override val side: String,
                               @JsonProperty("size") override val size: String,
                               @JsonProperty("product_id") override val productId: String,
                               @JsonProperty("profile_id") override val profileId: String,
-                              @JsonProperty("client_oid") override val clientId: String): CoinbaseWriteOrder("limit", side, productId, profileId, clientId), LimitOrder
+                              @JsonProperty("client_oid") override val clientId: String,
+                              @JsonProperty("post_only") val postOnly: Boolean): CoinbaseWriteOrder("limit", side, productId, profileId, clientId), LimitOrder
 
 private class CoinbaseOrderDeserializer: StdDeserializer<CoinbaseOrder>(CoinbaseOrder::class.java) {
 
