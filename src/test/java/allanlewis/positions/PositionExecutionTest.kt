@@ -18,7 +18,7 @@ import reactor.test.StepVerifier
 class PositionExecutionTest(@Mock private val restApi: RestApi) {
 
     private val orderDone = OrderDone(restApi, 3)
-    private val limitOrder = CoinbaseLimitOrder("sell", "50000", ".001", "BTC-USD", "pid", "cid")
+    private val limitOrder = CoinbaseLimitOrder("sell", "50000", ".001", "BTC-USD", "pid", "cid", true)
     private val limitOrderPending = CoinbaseOrder("2", "pending", "", "", "limit", "buy", "BTC-USD")
     private val limitOrderDone = CoinbaseOrder("2", "done", "", "", "limit", "buy", "BTC-USD")
     private var count = 0
