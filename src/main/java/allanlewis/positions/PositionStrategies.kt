@@ -10,7 +10,13 @@ import reactor.core.publisher.Mono
 import reactor.tuple.Tuple2
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Duration
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.abs
 
 interface PositionStrategy {
 
@@ -107,8 +113,8 @@ class DayRangeStrategy(positionConfigs: Array<PositionConfig>,
 
     fun init(): DayRangeStrategy {
         productRepository.products()
-            .map { p -> p.id }.collectList()
-            .subscribe { list -> webSocketApi.ticks(list.toTypedArray())
+            .map { p -> p.id }
+            .subscribe { productId -> webSocketApi.ticks(productId)
                 .subscribe { pt -> decide(pt) }
             }
 
@@ -118,19 +124,37 @@ class DayRangeStrategy(positionConfigs: Array<PositionConfig>,
     private fun decide(tick: PriceTick) {
         logger.debug("{}", tick)
 
-        val high = BigDecimal(tick.twentyFourHourHigh)
-        val low = BigDecimal(tick.twentyFourHourLow)
+        val localDateTime = ZonedDateTime.parse(tick.time, DateTimeFormatter.ISO_DATE_TIME).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime()
+        val now = LocalDateTime.now()
 
-        val increment = high.subtract(low).divide(BigDecimal(4), RoundingMode.HALF_UP)
-        val start = low.add(increment)
-        val end = high.subtract(increment)
+        if (abs(Duration.between(localDateTime, now).toSeconds()) > 60) {
+            decisions[tick.productId] = Tuple2.of(false, "STALE {} {} {}", tick.price, localDateTime, now)
+        } else {
+            val high = BigDecimal(tick.twentyFourHourHigh)
+            val low = BigDecimal(tick.twentyFourHourLow)
 
-        val price = BigDecimal(tick.price)
-        val decision = price < end && price > start
+            val increment = high.subtract(low).divide(BigDecimal(4), RoundingMode.HALF_UP)
+            val end = high.subtract(increment)
 
-        logger.debug("{} {} {}...{}...{}...{} {}", tick.productId, tick.price, low.toPlainString(), start, end, high.toPlainString(), decision)
+            val price = BigDecimal(tick.price)
+            val decision = price < end && price > low
 
-        decisions[tick.productId] = Tuple2.of(decision, "" + price + " [" + start.toPlainString() + ", " + end.toPlainString() + "] " + "[" + low.toPlainString() + ", " + high.toPlainString() + "]")
+            logger.debug(
+                "{} {} {}...{}...{}...{} {}",
+                tick.productId,
+                tick.price,
+                low.toPlainString(),
+                low,
+                end,
+                high.toPlainString(),
+                decision
+            )
+
+            decisions[tick.productId] = Tuple2.of(
+                decision,
+                "" + price + " [" + low.toPlainString() + ", " + end.toPlainString() + "] " + "[" + low.toPlainString() + ", " + high.toPlainString() + "]"
+            )
+        }
     }
 
     override fun shouldOpen(productId: String): Mono<Boolean> {

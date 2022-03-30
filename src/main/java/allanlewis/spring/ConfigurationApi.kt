@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Scope
+import org.springframework.web.reactive.socket.WebSocketHandler
 
 @Configuration
 @Import(ConfigurationCoinbase::class)
@@ -93,6 +94,16 @@ open class ApplicationConfiguration(private val configurationData: Configuration
         return OrderNotPending(restApi(), 10)
     }
 
+    @Bean
+    open fun webSocketHandler(): WebSocketHandler {
+        return DefaultWebSocketHandler(webSocketApiImpl(), productRepository())
+    }
+
+    @Bean
+    open fun webSocketClient(): DefaultWebSocketClient {
+        return DefaultWebSocketClient(webSocketApiImpl().url, webSocketHandler()).init()
+    }
+
     private fun restApi(): RestApi {
         return applicationContext.getBean(RestApi::class.java)
     }
@@ -103,6 +114,10 @@ open class ApplicationConfiguration(private val configurationData: Configuration
 
     private fun orderFactory(): OrderFactory {
         return applicationContext.getBean(OrderFactory::class.java)
+    }
+
+    private fun webSocketApiImpl(): WebSocketApiImpl {
+        return applicationContext.getBean(WebSocketApiImpl::class.java)
     }
 
 }

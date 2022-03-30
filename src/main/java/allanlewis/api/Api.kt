@@ -98,7 +98,7 @@ interface OrderFactory {
 interface WebSocketApi {
 
     @Throws(ApiException::class)
-    fun ticks(productIds: Array<String>): Flux<PriceTick>
+    fun ticks(productId: String): Flux<PriceTick>
 
 }
 
@@ -121,9 +121,11 @@ data class PositionConfig(val id: String,
                           val sell: String,
                           val strategy: String)
 
-interface WebSocketBridge {
+interface WebSocketApiImpl {
 
-    fun send(): Flux<String>
+    val url: String
+
+    fun send(productIds: Flux<String>): Flux<String>
 
     fun receive(message: String)
 

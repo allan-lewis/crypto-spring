@@ -2,41 +2,37 @@ package allanlewis.coinbase
 
 import allanlewis.api.PriceTick
 import allanlewis.api.WebSocketApi
-import allanlewis.api.WebSocketBridge
+import allanlewis.api.WebSocketApiImpl
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Duration
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
-class CoinbaseWebSocketApiImpl(private val configuration: CoinbaseWebSocketConfiguration): WebSocketApi, WebSocketBridge {
+class CoinbaseWebSocketApiImpl(private val configuration: CoinbaseWebSocketConfiguration): WebSocketApi, WebSocketApiImpl {
 
     private val logger = LoggerFactory.getLogger(javaClass)
     private val mapper = jacksonObjectMapper()
     private val ticks = ConcurrentHashMap<String, PriceTick>()
     private val flux =  Flux.interval(Duration.ofMillis(500))
-        .onBackpressureDrop()
+        .onBackpressureLatest()
         .map { ticks.values }
         .flatMapIterable { ticks -> ticks }
         .share()
-    private val future = CompletableFuture<Array<String>>()
 
-    override fun ticks(productIds: Array<String>): Flux<PriceTick> {
-        if (!future.isDone) {
-            logger.info("Getting ticks for {}", productIds)
+    override val url = configuration.webSocketUrl
 
-            future.complete(productIds)
-        } else {
-            logger.warn("Ignored repeated ticks request")
-        }
-
-        return flux
+    init {
+        flux.sample(Duration.ofSeconds(10)).subscribe { tick -> logger.info("Tick: {} {} {}", tick.productId, tick.price, tick.time) }
     }
 
-    override fun send(): Flux<String> {
-        return Mono.fromFuture(future).flatMapMany { array -> subscriptionPayload(array)}
+    override fun ticks(productId: String): Flux<PriceTick> {
+        return flux.filter { t -> t.productId == productId }
+    }
+
+    override fun send(productIds: Flux<String>): Flux<String> {
+        return subscriptionPayload(productIds)
     }
 
     override fun receive(message: String) {
@@ -55,18 +51,15 @@ class CoinbaseWebSocketApiImpl(private val configuration: CoinbaseWebSocketConfi
         }
     }
 
-    private fun subscriptionPayload(ids: Array<String>): Flux<String> {
+    private fun subscriptionPayload(productIds: Flux<String>): Flux<String> {
         val timestamp = CoinbaseUtilities.timestamp()
         val signature = CoinbaseUtilities.sign(configuration.secret, "/users/self/verify", "GET", "", timestamp)
 
-        val message = SubscriptionMessage (signature,
+        return productIds.collectList().flatMapMany { ids  -> Mono.just(SubscriptionMessage(signature,
             configuration.key,
             configuration.passphrase,
             timestamp,
-            ids
-        )
-
-        return Flux.just(jacksonObjectMapper().writeValueAsString(message))
+            ids.toTypedArray())) }.map { m -> jacksonObjectMapper().writeValueAsString(m) }
     }
 
 }

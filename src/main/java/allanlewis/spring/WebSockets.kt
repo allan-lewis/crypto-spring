@@ -1,6 +1,7 @@
 package allanlewis.spring
 
-import allanlewis.api.WebSocketBridge
+import allanlewis.api.WebSocketApiImpl
+import allanlewis.products.ProductRepository
 import org.slf4j.LoggerFactory
 import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketSession
@@ -27,7 +28,8 @@ class DefaultWebSocketClient(private val webSocketUrl: String, private val webSo
 
 }
 
-class DefaultWebSocketHandler(private val webSocketBridge: WebSocketBridge): WebSocketHandler {
+class DefaultWebSocketHandler(private val webSocketApiImpl: WebSocketApiImpl,
+                              private val productRepository: ProductRepository): WebSocketHandler {
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -35,9 +37,9 @@ class DefaultWebSocketHandler(private val webSocketBridge: WebSocketBridge): Web
 
         logger.info("Handling session {}", session)
 
-        return session.send(webSocketBridge.send()
+        return session.send(webSocketApiImpl.send(productRepository.products().map { p -> p.id })
             .map(session::textMessage))
-            .and(session.receive().map { webSocketMessage -> webSocketBridge.receive(webSocketMessage.payloadAsText) })
+            .and(session.receive().map { webSocketMessage -> webSocketApiImpl.receive(webSocketMessage.payloadAsText) })
     }
 
 }
