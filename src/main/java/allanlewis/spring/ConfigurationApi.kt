@@ -3,6 +3,7 @@ package allanlewis.spring
 import allanlewis.api.*
 import allanlewis.positions.*
 import allanlewis.products.ProductRepository
+import allanlewis.products.ProductWebSocketMonitor
 import org.springframework.beans.factory.config.BeanDefinition
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
@@ -120,6 +121,10 @@ open class ApplicationConfiguration(private val configurationData: Configuration
         return applicationContext.getBean(WebSocketApiImpl::class.java)
     }
 
+    @Bean
+    open fun productWebSocketMonitor(): ProductWebSocketMonitor {
+        return ProductWebSocketMonitor(productRepository(), webSocketApi())
+    }
 }
 
 @ConstructorBinding

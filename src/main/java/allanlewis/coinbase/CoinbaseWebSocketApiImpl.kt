@@ -23,10 +23,6 @@ class CoinbaseWebSocketApiImpl(private val configuration: CoinbaseWebSocketConfi
 
     override val url = configuration.webSocketUrl
 
-    init {
-        flux.sample(Duration.ofSeconds(10)).subscribe { tick -> logger.info("Tick: {} {} {}", tick.productId, tick.price, tick.time) }
-    }
-
     override fun ticks(productId: String): Flux<PriceTick> {
         return flux.filter { t -> t.productId == productId }
     }
