@@ -40,6 +40,7 @@ class DefaultWebSocketHandler(private val webSocketApiImpl: WebSocketApiImpl,
         return session.send(webSocketApiImpl.send(productRepository.products().map { p -> p.id })
             .map(session::textMessage))
             .and(session.receive().map { webSocketMessage -> webSocketApiImpl.receive(webSocketMessage.payloadAsText) })
+            .and(session.closeStatus().map { cs -> logger.info("Session closed: {}", cs) })
     }
 
 }

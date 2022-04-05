@@ -112,6 +112,8 @@ interface PriceTick {
     val twentyFourHourHigh: String
     val twentyFourHourLow: String
 
+    fun stale(): Boolean
+
 }
 
 data class PositionConfig(val id: String,

@@ -9,11 +9,13 @@ class ProductWebSocketMonitor(productRepository: ProductRepository, private val 
     val logger = LoggerFactory.getLogger(javaClass)!!
 
     init {
-        productRepository.products().map { p -> p.id }.subscribe { id -> webSocketApi.ticks(id).sample(Duration.ofSeconds(10)).subscribe { t ->
-            logger.info(
-                "Tick: {}",
-                t
-            )
+        productRepository.products().map { p -> p.id }
+            .subscribe { id -> webSocketApi.ticks(id).sample(Duration.ofSeconds(10)).subscribe { t ->
+            if (t.stale()) {
+                logger.warn("[tick_stale] {}", t)
+            } else {
+                logger.info("[tick_ok] {}", t)
+            }
         }
         }
     }

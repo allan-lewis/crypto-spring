@@ -10,13 +10,7 @@ import reactor.core.publisher.Mono
 import reactor.tuple.Tuple2
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.time.Duration
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.math.abs
 
 interface PositionStrategy {
 
@@ -124,11 +118,8 @@ class DayRangeStrategy(positionConfigs: Array<PositionConfig>,
     private fun decide(tick: PriceTick) {
         logger.debug("{}", tick)
 
-        val localDateTime = ZonedDateTime.parse(tick.time, DateTimeFormatter.ISO_DATE_TIME).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime()
-        val now = LocalDateTime.now()
-
-        if (abs(Duration.between(localDateTime, now).toSeconds()) > 60) {
-            decisions[tick.productId] = Tuple2.of(false, "STALE {} {} {}", tick.price, localDateTime, now)
+        if (tick.stale()) {
+            decisions[tick.productId] = Tuple2.of(false, "STALE $tick")
         } else {
             val high = BigDecimal(tick.twentyFourHourHigh)
             val low = BigDecimal(tick.twentyFourHourLow)

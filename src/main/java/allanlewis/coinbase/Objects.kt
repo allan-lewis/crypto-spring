@@ -7,6 +7,9 @@ import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer
+import java.time.*
+import java.time.format.DateTimeFormatter
+import kotlin.math.abs
 
 @JsonDeserialize(using = CoinbaseAccountDeserializer::class)
 data class CoinbaseAccount(@JsonProperty("id") override val id: String,
@@ -122,7 +125,14 @@ data class CoinbasePriceTick(override val price: String,
                              override val twentyFourHourOpen: String,
                              override val twentyFourHourVolume: String,
                              override val twentyFourHourHigh: String,
-                             override val twentyFourHourLow: String) : PriceTick
+                             override val twentyFourHourLow: String) : PriceTick {
+
+    override fun stale(): Boolean {
+        val localDateTime = ZonedDateTime.parse(time, DateTimeFormatter.ISO_DATE_TIME).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime()
+        return abs(Duration.between(localDateTime, LocalDateTime.now()).toSeconds()) > 60
+    }
+
+}
 
 @JsonDeserialize(using = CoinbaseWebSocketMessageDeserializer::class)
 data class CoinbaseWebSocketMessage(val type: String,
