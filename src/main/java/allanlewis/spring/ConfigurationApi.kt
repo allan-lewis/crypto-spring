@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Scope
-import org.springframework.web.reactive.socket.WebSocketHandler
 
 @Configuration
 @Import(ConfigurationCoinbase::class)
@@ -96,8 +95,8 @@ open class ApplicationConfiguration(private val configurationData: Configuration
     }
 
     @Bean
-    open fun webSocketHandler(): WebSocketHandler {
-        return DefaultWebSocketHandler(webSocketApiImpl(), productRepository())
+    open fun webSocketHandler(): DefaultWebSocketHandler {
+        return DefaultWebSocketHandler(webSocketApiImpl(), productRepository()).init()
     }
 
     @Bean

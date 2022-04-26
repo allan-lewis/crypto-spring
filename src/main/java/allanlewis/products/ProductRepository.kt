@@ -1,6 +1,5 @@
 package allanlewis.products
 
-import allanlewis.api.ApiException
 import allanlewis.api.PositionConfig
 import allanlewis.api.Product
 import allanlewis.api.RestApi
@@ -16,18 +15,14 @@ class ProductRepository(private val positionConfigs: Array<PositionConfig>, priv
 
     fun init(): ProductRepository {
         for (pc in positionConfigs) {
-            logger.info("Loading {}", pc.id)
+            logger.info("Loading product {}", pc)
 
-            try {
-                products[pc.id] = restApi.getProduct(pc.id)
-            } catch (ex: ApiException) {
-                logger.error("Unable to load product " + pc.id, ex)
-            }
+            products[pc.id] = restApi.getProduct(pc.id)
         }
 
         return this
     }
-    
+
     fun products(): Flux<Product> {
         return Flux.merge(products.values)
     }
